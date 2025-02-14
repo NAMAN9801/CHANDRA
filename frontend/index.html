@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Chandra</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow-x: hidden;
+            font-family: 'Orbitron', sans-serif;
+            background: #000;
+            color: white;
+            scroll-behavior: smooth;
+        }
+        #scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            transition: filter 0.3s;
+        }
+        .content {
+            position: relative;
+            text-align: center;
+            padding: 50px;
+            z-index: 1;
+        }
+        .section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            perspective: 1px;
+            transform-style: preserve-3d;
+        }
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            transform: translateZ(-1px) scale(2);
+            z-index: -1;
+            opacity: 0.5;
+        }
+        .title {
+            font-size: 5em;
+            margin-bottom: 0.5em;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            animation: glow 2s infinite;
+        }
+        .subtitle {
+            font-size: 1.5em;
+            margin-bottom: 2em;
+            opacity: 0.8;
+        }
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 1s;
+        }
+        .loading-text {
+            color: white;
+            font-size: 2em;
+            animation: pulse 1s infinite;
+        }
+        .explore-btn, .nav-btn {
+            padding: 1em 2em;
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.2em;
+            margin: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .explore-btn:hover, .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .explore-btn::before, .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s;
+            transform: scaleX(0);
+            transform-origin: left;
+        }
+        .explore-btn:hover::before, .nav-btn:hover::before {
+            transform: scaleX(1);
+        }
+        .nav {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .about, .features, .contact {
+            opacity: 0;
+            animation: fadeIn 2s ease-in forwards;
+        }
+        .card-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px;
+            transition: transform 0.3s, background 0.3s;
+            width: 300px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        .card:nth-child(even) {
+            align-self: flex-end;
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .gallery {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .gallery img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            margin: 10px;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+        .gallery img:hover {
+            transform: scale(1.1);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 100;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            color: black;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+            50% { text-shadow: 0 0 20px rgba(255,255,255,1); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* --- Adjusted Styles Below --- */
+
+        .section h2 { /* Targeting the section titles (About, Features, Contact Us) */
+            font-size: 3.0em; /* Increased font size - adjust as needed */
+            margin-bottom: 40px; /* Increased margin below titles for spacing - adjust as needed */
+        }
+
+        .card-container {
+            margin-top: 30px; /* Added margin above card container for spacing from the title - adjust as needed */
+        }
+
+    </style>
+</head>
+<body>
+    <div id="scene-container"></div>
+    <div class="loading-screen">
+        <div class="loading-text">Loading Universe...</div>
+    </div>
+    <div class="nav">
+        <button class="nav-btn" onclick="scrollToSection('about')">About</button>
+        <button class="nav-btn" onclick="scrollToSection('features')">Features</button>
+        <button class="nav-btn" onclick="scrollToSection('contact')">Contact</button>
+    </div>
+    <div class="content section" id="home">
+        <h1 class="title">CHANDRA</h1>
+        <p class="subtitle">Explore the cosmic frontier</p>
+        <button class="explore-btn" onclick="scrollToSection('about')">Begin Journey</button>
+    </div>
+    <div class="content section about" id="about">
+        <h2>About Project Chandra</h2>
+        <div class="card-container">
+            <div class="card">
+                <h3>Our Mission</h3>
+                <p>To explore the cosmic frontier and uncover the mysteries of the universe.</p>
+            </div>
+            <div class="card">
+                <h3>Our Vision</h3>
+                <p>To inspire future generations through space exploration and innovation.</p>
+            </div>
+        </div>
+    </div>
+    <div class="content section features" id="features">
+        <h2>Features</h2>
+        <div class="card-container">
+            <div class="card">
+                <h3>Advanced Technology</h3>
+                <p>Utilizing state-of-the-art technology to push the boundaries of space exploration.</p>
+            </div>
+            <div class="card">
+                <h3>Innovative Research</h3>
+                <p>Conducting groundbreaking research to understand the cosmos better.</p>
+            </div>
+        </div>
+        <div class="gallery">
+            <img src="https://via.placeholder.com/200" alt="Feature 1">
+            <img src="https://via.placeholder.com/200" alt="Feature 2">
+            <img src="https://via.placeholder.com/200" alt="Feature 3">
+        </div>
+    </div>
+    <div class="content section contact" id="contact">
+        <h2>Contact Us</h2>
+        <div class="card-container">
+            <div class="card">
+                <h3>Get in Touch</h3>
+                <p>Reach out to our team to learn more about Project Chandra and its mission.</p>
+                <button class="explore-btn" onclick="openModal()">Contact Form</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <h3>Contact Form</h3>
+            <form>
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+                <label for="message">Message:</label>
+                <textarea id="message" name="message" rows="4" required></textarea>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Texture URLs
+        const textureURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/lroc_color_poles_1k.jpg";
+        const displacementURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/ldem_3_8bit.jpg";
+        const worldURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/hipp8_s.jpg";
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('scene-container').appendChild(renderer.domElement);
+
+        // Loading manager
+        const loadingManager = new THREE.LoadingManager();
+        let texturesLoaded = 0;
+        const totalTextures = 3;
+
+        loadingManager.onLoad = () => {
+            texturesLoaded++;
+            if (texturesLoaded >= totalTextures) {
+                document.querySelector('.loading-screen').style.opacity = 0;
+                setTimeout(() => {
+                    document.querySelector('.loading-screen').style.display = 'none';
+                }, 1000);
+            }
+        };
+
+        // Texture loader
+        const textureLoader = new THREE.TextureLoader(loadingManager);
+
+        // Load textures first
+        Promise.all([
+            new Promise(resolve => textureLoader.load(textureURL, resolve)),
+            new Promise(resolve => textureLoader.load(displacementURL, resolve)),
+            new Promise(resolve => textureLoader.load(worldURL, resolve))
+        ]).then(([texture, displacementMap, worldTexture]) => {
+            // Moon creation
+            const geometry = new THREE.SphereGeometry(2, 60, 60);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0xffffff,
+                map: texture,
+                displacementMap: displacementMap,
+                displacementScale: 0.06,
+                bumpMap: displacementMap,
+                bumpScale: 0.04,
+                reflectivity: 0,
+                shininess: 0
+            });
+
+            const moon = new THREE.Mesh(geometry, material);
+            moon.rotation.x = 3.1415 * 0.02;
+            moon.rotation.y = 3.1415 * 1.54;
+
+            // World background (stars)
+            const worldGeometry = new THREE.SphereGeometry(1000, 60, 60);
+            const worldMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                map: worldTexture,
+                side: THREE.BackSide
+            });
+            const world = new THREE.Mesh(worldGeometry, worldMaterial);
+
+            // Lighting
+            const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+            directionalLight.position.set(-100, 10, 50);
+
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.1);
+            hemiLight.color.setHSL(0.6, 1, 0.6);
+            hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+            hemiLight.position.set(0, 0, 0);
+
+            // Add everything to scene
+            scene.add(moon);
+            scene.add(world);
+            scene.add(directionalLight);
+            scene.add(hemiLight);
+
+            // Camera position
+            camera.position.z = 5;
+
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Rotate moon
+                moon.rotation.y += 0.001;
+                moon.rotation.x += 0.0001;
+
+                // Rotate world background
+                world.rotation.y += 0.0001;
+                world.rotation.x += 0.0005;
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            // Remove loading screen
+            document.querySelector('.loading-screen').style.opacity = 0;
+            setTimeout(() => {
+                document.querySelector('.loading-screen').style.display = 'none';
+            }, 1000);
+        });
+
+        // Handle window resize
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onResize, false);
+
+        // Scroll to section
+        function scrollToSection(sectionId) {
+            document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Modal functionality
+        function openModal() {
+            document.getElementById('modal').classList.add('show');
+            document.getElementById('scene-container').style.filter = 'blur(20px)';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+            document.getElementById('scene-container').style.filter = 'blur(0)';
+        }
+
+        // Blur background on scroll
+        window.addEventListener('scroll', () => {
+            const scrollPosition = window.scrollY;
+            const blurValue = Math.min(scrollPosition / 500, 5);
+            document.getElementById('scene-container').style.filter = `blur(${blurValue}px)`;
+        });
+    </script>
+</body>
+</html>
