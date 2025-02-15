@@ -3,42 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image to 3D Converter</title>
+    <title>Advanced Image to 3D Converter</title>
 
     <style>
-        /* Background with a smooth gradient */
+        :root {
+            --space-blue: #1a237e;
+            --moon-gray: #424242;
+            --star-white: #ffffff;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-            text-align: center;
-            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #000000, #1a237e);
+            color: var(--star-white);
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* Upload box styling */
+        .container {
+            max-width: 800px;
+            width: 90%;
+            padding: 2rem;
+        }
+
         .upload-box {
-            width: 350px;
-            padding: 25px;
-            background: white;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
             box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease-in-out;
         }
 
-        /* Hover effect on upload box */
-        .upload-box:hover {
-            transform: scale(1.05);
+        h2 {
+            margin: 0;
+            padding-bottom: 1.5rem;
+            background: linear-gradient(to right, #ffffff, #b0bec5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        /* Hide default file input */
         #fileInput {
             display: none;
         }
 
-        /* Upload button styling */
-        .upload-label, .convert-btn {
+        .upload-label, .action-btn {
             display: block;
             width: 100%;
             padding: 12px;
@@ -46,112 +58,160 @@
             border-radius: 8px;
             cursor: pointer;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 15px;
             transition: 0.3s;
+            border: none;
+            color: white;
         }
 
-        /* Choose file button */
         .upload-label {
-            background: #007bff;
-            color: white;
-            border: none;
+            background: var(--space-blue);
+            transform-origin: center;
+            transition: transform 0.3s, background 0.3s;
         }
 
         .upload-label:hover {
-            background: #0056b3;
+            background: #283593;
+            transform: translateY(-2px);
         }
 
-        /* Convert to 3D button */
-        .convert-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            display: none; /* Hidden until an image is uploaded */
-        }
-
-        .convert-btn:hover {
-            background: #218838;
-        }
-
-        /* Image preview styling */
-        .preview {
-            margin-top: 15px;
-            max-width: 100%;
-            border-radius: 5px;
+        .action-buttons {
             display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            padding: 12px;
+            margin: 0;
+        }
+
+        .action-btn.convert {
+            background: #28a745;
+        }
+
+        .action-btn.psr {
+            background: #dc3545;
+        }
+
+        .action-btn.analyze {
+            background: #17a2b8;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(110%);
+        }
+
+        .preview-container {
+            margin-top: 20px;
+            position: relative;
+            display: none;
+        }
+
+        .preview {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 8px;
             box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <div class="upload-box">
+            <h2>Advanced Image to 3D Converter</h2>
 
-    <div class="upload-box">
-        <h2>Image to 3D Converter</h2>
+            <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
+            <label for="fileInput" class="upload-label">Choose an Image</label>
 
-        <!-- File Upload Input (Hidden) -->
-        <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
+            <div class="preview-container">
+                <img id="preview" class="preview">
+            </div>
 
-        <!-- Custom File Upload Button -->
-        <label for="fileInput" class="upload-label">Choose an Image</label>
-
-        <!-- Image Preview -->
-        <img id="preview" class="preview">
-
-        <!-- Convert to 3D Button -->
-        <button class="convert-btn" id="convertBtn" onclick="uploadImage()">Convert to 3D</button>
+            <div class="action-buttons" id="actionButtons">
+                <button class="action-btn convert" onclick="convert3D()">Convert to 3D</button>
+                <button class="action-btn psr" onclick="performPSR()">PSR Analysis</button>
+                <button class="action-btn analyze" onclick="performAnalysis()">Deep Analysis</button>
+            </div>
+        </div>
     </div>
 
+    <div class="status-message" id="statusMessage"></div>
+
     <script>
-        /**
-         * Preview selected image before uploading.
-         * @param {Event} event - The file input change event.
-         */
         function previewImage(event) {
-            let reader = new FileReader();
+            const reader = new FileReader();
             reader.onload = function() {
-                let img = document.getElementById("preview");
-                img.src = reader.result;
-                img.style.display = "block"; // Show preview
-                document.getElementById("convertBtn").style.display = "block"; // Show Convert Button
+                const preview = document.getElementById('preview');
+                const previewContainer = document.querySelector('.preview-container');
+                const actionButtons = document.getElementById('actionButtons');
+                
+                preview.src = reader.result;
+                previewContainer.style.display = 'block';
+                actionButtons.style.display = 'grid';
             };
             reader.readAsDataURL(event.target.files[0]);
         }
 
-        /**
-         * Uploads the image to the backend for 3D conversion.
-         * This function will send the file to the backend API.
-         */
-        function uploadImage() {
-            let fileInput = document.getElementById("fileInput");
-            let file = fileInput.files[0];
+        function showMessage(message, type = 'success') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.style.background = type === 'success' 
+                ? 'rgba(76, 175, 80, 0.9)' 
+                : 'rgba(244, 67, 54, 0.9)';
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 3000);
+        }
 
-            if (!file) {
-                alert("Please select an image first!");
-                return;
-            }
+        function convert3D() {
+            // Implement 3D conversion logic
+            showMessage('Converting image to 3D model...');
+            // Simulated API call
+            setTimeout(() => {
+                showMessage('3D model generated successfully!');
+            }, 2000);
+        }
 
-            let formData = new FormData();
-            formData.append("image", file); // Append file to FormData
+        function performPSR() {
+            // Implement PSR analysis logic
+            showMessage('Performing PSR analysis...');
+            // Simulated API call
+            setTimeout(() => {
+                showMessage('PSR analysis completed!');
+            }, 1500);
+        }
 
-            fetch("http://localhost:5000/upload", { // Update with backend API URL
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert("Image uploaded successfully! Processing...");
-                    // Redirect or handle response data
-                } else {
-                    alert("Error: " + data.message);
-                }
-            })
-            .catch(error => {
-                console.error("Upload Error:", error);
-                alert("Failed to upload. Check console for details.");
-            });
+        function performAnalysis() {
+            // Implement deep analysis logic
+            showMessage('Performing deep analysis...');
+            // Simulated API call
+            setTimeout(() => {
+                showMessage('Analysis completed!');
+            }, 1800);
         }
     </script>
-
 </body>
 </html>

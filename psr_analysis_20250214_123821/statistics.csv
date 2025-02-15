@@ -1,9 +1,0 @@
-,image_stats,psr_coverage
-mean,93.35750910619221,
-std,74.5036068697923,
-min,1.0,
-max,255.0,
-dynamic_range,254.0,
-threshold,,35.317315774726815
-adaptive,,40.698725133090505
-edges,,19.899481647520314

@@ -6,6 +6,9 @@ import os
 import pandas as pd
 from scipy import ndimage
 from skimage import feature
+import requests
+import io
+import sys
 
 class OptimizedPSRAnalyzer:
     def __init__(self):
@@ -16,12 +19,19 @@ class OptimizedPSRAnalyzer:
     def print_progress(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
 
-    def load_sample_image(self, path):
-        self.print_progress(f"Loading image from: {path}")
+    def load_sample_image(self, url):
+        self.print_progress(f"Loading image from URL: {url}")
         try:
-            image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+            # Download image from URL
+            response = requests.get(url)
+            response.raise_for_status()  # Raise exception for bad status codes
+            
+            # Convert to numpy array
+            image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
+            image = cv2.imdecode(image_array, cv2.IMREAD_GRAYSCALE)
+            
             if image is None:
-                raise ValueError("Failed to load image")
+                raise ValueError("Failed to decode image from URL")
             return image
         except Exception as e:
             self.print_progress(f"Error loading image: {str(e)}")
@@ -89,9 +99,51 @@ class OptimizedPSRAnalyzer:
     def save_results(self, stats, output_path):
         pd.DataFrame(stats).to_csv(os.path.join(output_path, 'statistics.csv'))
 
-    def create_visualization(self, image, psr_results, terrain_analysis, stats):
+    def assess_landing_safety(self, terrain_analysis, stats, psr_results):
+        """
+        Assess if it's safe to land a rover based on terrain characteristics
+        Returns: tuple (bool, str) - (is_safe, explanation)
+        """
+        # Define safety thresholds
+        ROUGHNESS_THRESHOLD = 40  # Maximum acceptable surface roughness
+        MIN_FLAT_AREA_PERCENTAGE = 30  # Minimum required relatively flat area
+        MAX_EDGE_DENSITY = 15  # Maximum acceptable edge density percentage
+        
+        # Calculate mean roughness from terrain analysis
+        mean_roughness = np.mean(terrain_analysis['roughness'])
+        
+        # Calculate flat area percentage (inverse of edge density)
+        edge_density = (np.sum(psr_results['edges'] > 0) / psr_results['edges'].size) * 100
+        flat_area_percentage = 100 - edge_density
+        
+        # Check conditions
+        conditions = {
+            "Terrain Roughness": mean_roughness < ROUGHNESS_THRESHOLD,
+            "Flat Area": flat_area_percentage > MIN_FLAT_AREA_PERCENTAGE,
+            "Edge Density": edge_density < MAX_EDGE_DENSITY
+        }
+        
+        # Generate detailed explanation
+        explanation = "Landing Site Analysis:\n"
+        for factor, is_safe in conditions.items():
+            status = "SAFE" if is_safe else "UNSAFE"
+            if factor == "Terrain Roughness":
+                explanation += f"- {factor}: {status} (Value: {mean_roughness:.1f})\n"
+            elif factor == "Flat Area":
+                explanation += f"- {factor}: {status} (Value: {flat_area_percentage:.1f}%)\n"
+            else:
+                explanation += f"- {factor}: {status} (Value: {edge_density:.1f}%)\n"
+        
+        # Final decision - all conditions must be met
+        is_safe = all(conditions.values())
+        explanation += f"\nFINAL ASSESSMENT: {'SAFE for landing' if is_safe else 'UNSAFE for landing'}"
+        
+        return is_safe, explanation
+
+    def create_visualization(self, image, psr_results, terrain_analysis, stats, landing_explanation):
         """Main visualization of the program"""
-        fig = plt.figure(figsize=(15, 10))
+        fig = plt.figure(figsize=(15, 12))  # Increased height to accommodate text
+        plt.subplots_adjust(hspace=0.4)  # Increase vertical space between subplots
         
         # Original and enhanced image
         ax1 = plt.subplot(231)
@@ -123,11 +175,12 @@ class OptimizedPSRAnalyzer:
         stats_text = (
             f"PSR Coverage:\n"
             f"Basic: {stats['psr_coverage']['threshold']:.1f}%\n"
-            f"Adaptive: {stats['psr_coverage']['adaptive']:.1f}%\n\n"
-            f"Image Statistics:\n"
+            f"Adaptive: {stats['psr_coverage']['adaptive']:.1f}%\n"
+            f"\nImage Statistics:\n"
             f"Mean: {stats['image_stats']['mean']:.1f}\n"
             f"Std: {stats['image_stats']['std']:.1f}\n"
-            f"Dynamic Range: {stats['image_stats']['dynamic_range']}"
+            f"Dynamic Range: {stats['image_stats']['dynamic_range']}\n"
+            f"\n{landing_explanation}"
         )
         ax6.text(0.1, 0.5, stats_text, fontsize=10)
         
@@ -136,10 +189,10 @@ class OptimizedPSRAnalyzer:
 
     def analyze_and_visualize(self, image_path):
         """Main analysis function"""
-        # Load image
+        # Load image from local file
         image = self.load_sample_image(image_path)
         if image is None:
-            return False
+            return None
 
         self.print_progress("Enhancing image...")
         enhanced = self.enhance_image(image)
@@ -153,28 +206,42 @@ class OptimizedPSRAnalyzer:
         self.print_progress("Calculating statistics...")
         stats = self.calculate_statistics(enhanced, psr_results)
 
+        self.print_progress("Assessing landing safety...")
+        is_safe, landing_explanation = self.assess_landing_safety(
+            terrain_analysis, stats, psr_results
+        )
+        
+        # Add landing assessment to stats
+        stats['landing_assessment'] = {
+            'is_safe': is_safe,
+            'explanation': landing_explanation
+        }
+
         self.print_progress("Saving results...")
         self.save_results(stats, self.output_dir)
 
         self.print_progress("Creating visualization...")
-        fig = self.create_visualization(image, psr_results, terrain_analysis, stats)
+        fig = self.create_visualization(image, psr_results, terrain_analysis, stats, landing_explanation)
         
-        # Save and show results
-        output_path = os.path.join(self.output_dir, 'psr_analysis.png')
+        # Save figure locally
+        output_path = os.path.join(self.output_dir, 'analysis_result.png')
         plt.savefig(output_path)
+        plt.close()
         
-        self.print_progress(f"Analysis complete! Results saved to: {self.output_dir}")
-        plt.show()
-        return True
+        return output_path
 
 def main():
     analyzer = OptimizedPSRAnalyzer()
     
+    # Example URL of an image
+    image_url = "http://127.0.0.1:5000/display/c2af9fbf-417b-4e7d-ae1e-18eb96d61840.png"
     
-    image_path = r'C:\Users\dhing\Desktop\Lunar PSR images\proto.PNG'
-    
-    # Run analysis
-    analyzer.analyze_and_visualize(image_path)
+    # Run analysis and get result path
+    result_path = analyzer.analyze_and_visualize(image_url)
+    if result_path:
+        print(f"Analysis complete! Result image saved at: {result_path}")
+    else:
+        print("Analysis failed!")
 
 if __name__ == "__main__":
     main()
