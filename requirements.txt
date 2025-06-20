@@ -4,3 +4,7 @@ opencv-python
 pandas
 scikit-image
 scipy
+numpy
+opencv-python
+PyQt5
+scikit-image
