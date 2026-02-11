@@ -7,7 +7,6 @@ import pandas as pd
 from scipy import ndimage
 from skimage import feature
 import requests
-import io
 import sys
 
 class OptimizedPSRAnalyzer:
@@ -19,23 +18,44 @@ class OptimizedPSRAnalyzer:
     def print_progress(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
 
-    def load_sample_image(self, url):
+    def load_image_from_path(self, path):
+        self.print_progress(f"Loading image from path: {path}")
+        try:
+            if not path:
+                raise ValueError("Image path is required")
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Image file not found: {path}")
+            if not os.path.isfile(path):
+                raise ValueError(f"Path is not a file: {path}")
+
+            image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+            if image is None:
+                raise ValueError(f"Unreadable or unsupported image format: {path}")
+            return image
+        except (FileNotFoundError, ValueError) as e:
+            self.print_progress(f"Image validation error: {str(e)}")
+            raise
+
+    def load_image_from_url(self, url, timeout=10):
         self.print_progress(f"Loading image from URL: {url}")
         try:
-            # Download image from URL
-            response = requests.get(url)
-            response.raise_for_status()  # Raise exception for bad status codes
-            
-            # Convert to numpy array
+            if not url:
+                raise ValueError("Image URL is required")
+
+            response = requests.get(url, timeout=timeout)
+            response.raise_for_status()
+
             image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
             image = cv2.imdecode(image_array, cv2.IMREAD_GRAYSCALE)
-            
+
             if image is None:
-                raise ValueError("Failed to decode image from URL")
+                raise ValueError("Unreadable or unsupported image format from URL")
             return image
-        except Exception as e:
-            self.print_progress(f"Error loading image: {str(e)}")
-            return None
+        except requests.exceptions.RequestException as e:
+            self.print_progress(f"URL image load failed: {str(e)}")
+            raise ValueError(f"Failed to download image from URL: {str(e)}") from e
+        except ValueError:
+            raise
 
     def enhance_image(self, image):
         """Clahe for image enhancement"""
@@ -187,12 +207,14 @@ class OptimizedPSRAnalyzer:
         plt.tight_layout()
         return fig
 
-    def analyze_and_visualize(self, image_path):
+    def analyze_and_visualize(self, image_path=None, image_url=None):
         """Main analysis function"""
-        # Load image from local file
-        image = self.load_sample_image(image_path)
-        if image is None:
-            return None
+        if image_path:
+            image = self.load_image_from_path(image_path)
+        elif image_url:
+            image = self.load_image_from_url(image_url)
+        else:
+            raise ValueError("Either image_path or image_url must be provided")
 
         self.print_progress("Enhancing image...")
         enhanced = self.enhance_image(image)
@@ -233,11 +255,14 @@ class OptimizedPSRAnalyzer:
 def main():
     analyzer = OptimizedPSRAnalyzer()
     
-    # Example URL of an image
-    image_url = "http://127.0.0.1:5000/display/c2af9fbf-417b-4e7d-ae1e-18eb96d61840.png"
+    if len(sys.argv) > 1:
+        image_path = sys.argv[1]
+        result_path = analyzer.analyze_and_visualize(image_path=image_path)
+    else:
+        # Optional non-API example URL
+        image_url = "http://127.0.0.1:5000/display/c2af9fbf-417b-4e7d-ae1e-18eb96d61840.png"
+        result_path = analyzer.analyze_and_visualize(image_url=image_url)
     
-    # Run analysis and get result path
-    result_path = analyzer.analyze_and_visualize(image_url)
     if result_path:
         print(f"Analysis complete! Result image saved at: {result_path}")
     else:
