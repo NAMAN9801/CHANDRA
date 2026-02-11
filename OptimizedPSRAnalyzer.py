@@ -3,35 +3,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import os
-import pandas as pd
+import json
 from scipy import ndimage
 from skimage import feature
-import requests
-import io
 import sys
 
 class OptimizedPSRAnalyzer:
-    def __init__(self):
+    def __init__(self, output_dir=None):
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.output_dir = f"psr_analysis_{self.timestamp}"
+        self.output_dir = output_dir or f"psr_analysis_{self.timestamp}"
         os.makedirs(self.output_dir, exist_ok=True)
 
     def print_progress(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
 
-    def load_sample_image(self, url):
-        self.print_progress(f"Loading image from URL: {url}")
+    def load_local_image(self, image_path):
+        self.print_progress(f"Loading image from file: {image_path}")
         try:
-            # Download image from URL
-            response = requests.get(url)
-            response.raise_for_status()  # Raise exception for bad status codes
-            
-            # Convert to numpy array
-            image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
-            image = cv2.imdecode(image_array, cv2.IMREAD_GRAYSCALE)
-            
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f"Image not found: {image_path}")
+
+            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
             if image is None:
-                raise ValueError("Failed to decode image from URL")
+                raise ValueError("Failed to decode image from file")
             return image
         except Exception as e:
             self.print_progress(f"Error loading image: {str(e)}")
@@ -97,7 +92,13 @@ class OptimizedPSRAnalyzer:
         return stats
 
     def save_results(self, stats, output_path):
-        pd.DataFrame(stats).to_csv(os.path.join(output_path, 'statistics.csv'))
+        serializable_stats = {
+            'image_stats': {k: float(v) for k, v in stats['image_stats'].items()},
+            'psr_coverage': {k: float(v) for k, v in stats['psr_coverage'].items()},
+            'landing_assessment': stats.get('landing_assessment', {})
+        }
+        with open(os.path.join(output_path, 'statistics.json'), 'w', encoding='utf-8') as file_obj:
+            json.dump(serializable_stats, file_obj, indent=2)
 
     def assess_landing_safety(self, terrain_analysis, stats, psr_results):
         """
@@ -188,9 +189,8 @@ class OptimizedPSRAnalyzer:
         return fig
 
     def analyze_and_visualize(self, image_path):
-        """Main analysis function"""
-        # Load image from local file
-        image = self.load_sample_image(image_path)
+        """Run full image analysis pipeline for a local file path."""
+        image = self.load_local_image(image_path)
         if image is None:
             return None
 
@@ -227,21 +227,45 @@ class OptimizedPSRAnalyzer:
         output_path = os.path.join(self.output_dir, 'analysis_result.png')
         plt.savefig(output_path)
         plt.close()
-        
-        return output_path
+
+        return {
+            'output_image_path': output_path,
+            'stats': {
+                'image_stats': {k: float(v) for k, v in stats['image_stats'].items()},
+                'psr_coverage': {k: float(v) for k, v in stats['psr_coverage'].items()}
+            },
+            'landing_assessment': stats['landing_assessment']
+        }
+
+
+def run_analysis(image_path, output_dir=None):
+    """Function-level API for programmatic use.
+
+    Returns structured metadata for API clients.
+    """
+    analyzer = OptimizedPSRAnalyzer(output_dir=output_dir)
+    result = analyzer.analyze_and_visualize(image_path)
+
+    if result is None:
+        raise ValueError("Analysis failed for image path")
+
+    return result
 
 def main():
-    analyzer = OptimizedPSRAnalyzer()
-    
-    # Example URL of an image
-    image_url = "http://127.0.0.1:5000/display/c2af9fbf-417b-4e7d-ae1e-18eb96d61840.png"
-    
-    # Run analysis and get result path
-    result_path = analyzer.analyze_and_visualize(image_url)
-    if result_path:
-        print(f"Analysis complete! Result image saved at: {result_path}")
-    else:
-        print("Analysis failed!")
+    if len(sys.argv) < 2:
+        print("Usage: python OptimizedPSRAnalyzer.py <local_image_path> [output_dir]")
+        sys.exit(1)
+
+    image_path = sys.argv[1]
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else None
+
+    try:
+        result = run_analysis(image_path, output_dir=output_dir)
+        print(f"Analysis complete! Result image saved at: {result['output_image_path']}")
+        print(f"Landing safe: {result['landing_assessment']['is_safe']}")
+    except Exception as exc:
+        print(f"Analysis failed: {exc}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

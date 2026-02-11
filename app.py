@@ -1,9 +1,8 @@
 from flask import Flask, request, jsonify, send_file
+from OptimizedPSRAnalyzer import run_analysis
 import os
-import io
 from PIL import Image
 import uuid
-import subprocess
 
 app = Flask(__name__)
 
@@ -92,30 +91,37 @@ def analyze_image():
         if not os.path.exists(filepath):
             return jsonify({'error': 'Image not found'}), 404
             
-        # Use absolute path for the script
-        script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'OptimisedPSRAnalysis.py') 
-        
-        # Run the OptimisedPSRAnalysis.py script with the filepath
-        try:
-            result = subprocess.run(['python', script_path, filepath], 
-                                  capture_output=True, 
-                                  text=True)
-            
-            if result.returncode != 0:
-                return jsonify({'error': f'Analysis failed: {result.stderr}'}), 500
-                
-            # Return the analysis results
-            return jsonify({
-                'success': True,
-                'analysis_result': result.stdout
-            })
-            
-        except subprocess.SubprocessError as e:
-            return jsonify({'error': f'Failed to run analysis: {str(e)}'}), 500
+        # Run analyzer directly (no subprocess)
+        analysis_result = run_analysis(filepath)
+
+        host_url = request.host_url.rstrip('/')
+        analysis_image_path = analysis_result['output_image_path'].replace('\\', '/')
+
+        # Return machine-readable analysis payload
+        return jsonify({
+            'success': True,
+            'analysis_image_url': f"{host_url}/analysis/{analysis_image_path}",
+            'stats': analysis_result['stats'],
+            'landing_assessment': analysis_result['landing_assessment']
+        })
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/analysis/<path:filepath>', methods=['GET'])
+def display_analysis_image(filepath):
+    try:
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'Analysis image not found'}), 404
+
+        return send_file(
+            filepath,
+            mimetype='image/png',
+            as_attachment=False
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/', methods=['GET'])
 def index():
