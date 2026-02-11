@@ -1,124 +1,138 @@
-from flask import Flask, request, jsonify, send_file
 import os
-import io
-from PIL import Image
-import uuid
 import subprocess
+import uuid
+from pathlib import Path
 
-app = Flask(__name__)
+from flask import Flask, jsonify, request, send_file
+from PIL import Image
 
-# Create a folder for storing uploaded images
-UPLOAD_FOLDER = 'uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Initialize model to None
-model = None
+def create_app() -> Flask:
+    app = Flask(__name__)
 
-def save_uploaded_file(file):
-    """Save uploaded file to disk and return the file path"""
-    try:
-        filename = str(uuid.uuid4()) + '.png'
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        
-        # Save the file
+    flask_env = os.getenv("FLASK_ENV", "production")
+    output_dir = os.getenv("OUTPUT_DIR", "uploads")
+    max_content_length_mb = int(os.getenv("MAX_CONTENT_LENGTH_MB", "16"))
+    cors_origins = os.getenv("CORS_ALLOWED_ORIGINS", "*")
+
+    app.config["ENV"] = flask_env
+    app.config["UPLOAD_FOLDER"] = output_dir
+    app.config["MAX_CONTENT_LENGTH"] = max_content_length_mb * 1024 * 1024
+
+    Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
+
+    allowed_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
+
+    @app.after_request
+    def add_cors_headers(response):
+        origin = request.headers.get("Origin")
+        if not allowed_origins or "*" in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = "*"
+        elif origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+        return response
+
+    def save_uploaded_file(file) -> str:
+        """Save uploaded file to disk and return the file path."""
+        filename = f"{uuid.uuid4()}.png"
+        filepath = Path(app.config["UPLOAD_FOLDER"]) / filename
+
         img = Image.open(file)
         img.save(filepath)
-        
-        return filepath
-    except Exception as e:
-        raise Exception(f"File save failed: {str(e)}")
 
-@app.route('/upload', methods=['POST'])
-def process_image():
-    try:    
-        if 'image' not in request.files:
-            return jsonify({'error': 'No file part'}), 400
-        
-        file = request.files['image']
-        if file.filename == '':
-            return jsonify({'error': 'No selected file'}), 400
+        return str(filepath)
+
+    @app.route("/health", methods=["GET"])
+    def health() -> tuple:
+        return jsonify({"status": "ok", "env": app.config["ENV"]}), 200
+
+    @app.route("/upload", methods=["POST"])
+    def process_image() -> tuple:
         try:
-            Image.open(file).verify()
-            file.seek(0)
-        except:
-            return jsonify({'error': 'Invalid image file'}), 400
+            if "image" not in request.files:
+                return jsonify({"error": "No file part"}), 400
 
-        # Save the file locally
-        filepath = save_uploaded_file(file)
-        
-        # Get the server's base URL (in production, you'd configure this properly)
-        host_url = request.host_url.rstrip('/')
-        
-        result_data = {
-            'original_path': filepath,
-            'display_url': f'{host_url}/display/{os.path.basename(filepath)}'
-        }
+            file = request.files["image"]
+            if file.filename == "":
+                return jsonify({"error": "No selected file"}), 400
 
-        return jsonify(result_data)
-    
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            try:
+                Image.open(file).verify()
+                file.seek(0)
+            except Exception:
+                return jsonify({"error": "Invalid image file"}), 400
 
-@app.route('/display/<filename>', methods=['GET'])
-def display_image(filename):
-    try:
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        
-        if not os.path.exists(filepath):
-            return jsonify({'error': 'Image not found'}), 404
-            
-        return send_file(
-            filepath,
-            mimetype='image/png',
-            as_attachment=False
-        )
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            filepath = save_uploaded_file(file)
+            host_url = request.host_url.rstrip("/")
 
-@app.route('/analyze', methods=['POST'])
-def analyze_image():
-    try:
-        # Get the display URL from the request
-        data = request.get_json()
-        if not data or 'display_url' not in data:
-            return jsonify({'error': 'Display URL is required'}), 400
-            
-        display_url = data['display_url']
-        
-        # Extract filename from display URL
-        filename = display_url.split('/')[-1]
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        
-        if not os.path.exists(filepath):
-            return jsonify({'error': 'Image not found'}), 404
-            
-        # Use absolute path for the script
-        script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'OptimisedPSRAnalysis.py') 
-        
-        # Run the OptimisedPSRAnalysis.py script with the filepath
+            result_data = {
+                "original_path": filepath,
+                "display_url": f"{host_url}/display/{Path(filepath).name}",
+            }
+            return jsonify(result_data), 200
+
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 500
+
+    @app.route("/display/<filename>", methods=["GET"])
+    def display_image(filename: str):
         try:
-            result = subprocess.run(['python', script_path, filepath], 
-                                  capture_output=True, 
-                                  text=True)
-            
+            filepath = Path(app.config["UPLOAD_FOLDER"]) / filename
+
+            if not filepath.exists():
+                return jsonify({"error": "Image not found"}), 404
+
+            return send_file(filepath, mimetype="image/png", as_attachment=False)
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 500
+
+    @app.route("/analyze", methods=["POST"])
+    def analyze_image() -> tuple:
+        try:
+            data = request.get_json()
+            if not data or "display_url" not in data:
+                return jsonify({"error": "Display URL is required"}), 400
+
+            display_url = data["display_url"]
+            filename = display_url.split("/")[-1]
+            filepath = Path(app.config["UPLOAD_FOLDER"]) / filename
+
+            if not filepath.exists():
+                return jsonify({"error": "Image not found"}), 404
+
+            script_path = Path(__file__).resolve().parent / "OptimizedPSRAnalyzer.py"
+
+            result = subprocess.run(
+                ["python", str(script_path), str(filepath)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
             if result.returncode != 0:
-                return jsonify({'error': f'Analysis failed: {result.stderr}'}), 500
-                
-            # Return the analysis results
-            return jsonify({
-                'success': True,
-                'analysis_result': result.stdout
-            })
-            
-        except subprocess.SubprocessError as e:
-            return jsonify({'error': f'Failed to run analysis: {str(e)}'}), 500
-            
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+                return jsonify({"error": f"Analysis failed: {result.stderr}"}), 500
+
+            return jsonify({"success": True, "analysis_result": result.stdout}), 200
+
+        except subprocess.SubprocessError as exc:
+            return jsonify({"error": f"Failed to run analysis: {str(exc)}"}), 500
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 500
+
+    @app.route("/", methods=["GET"])
+    def index() -> str:
+        return "Image Upload and Analysis Service is running."
+
+    return app
 
 
-@app.route('/', methods=['GET'])
-def index():
-    return "Image Upload and Analysis Service is running."
-if __name__ == '__main__':
-    app.run(debug=True)
+app = create_app()
+
+
+if __name__ == "__main__":
+    host = os.getenv("APP_HOST", "0.0.0.0")
+    port = int(os.getenv("APP_PORT", "5000"))
+    app.run(host=host, port=port, debug=app.config["ENV"] == "development")
