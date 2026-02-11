@@ -1,217 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Image to 3D Converter</title>
-
-    <style>
-        :root {
-            --space-blue: #1a237e;
-            --moon-gray: #424242;
-            --star-white: #ffffff;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #000000, #1a237e);
-            color: var(--star-white);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .container {
-            max-width: 800px;
-            width: 90%;
-            padding: 2rem;
-        }
-
-        .upload-box {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 2rem;
-            backdrop-filter: blur(10px);
-            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        h2 {
-            margin: 0;
-            padding-bottom: 1.5rem;
-            background: linear-gradient(to right, #ffffff, #b0bec5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .upload-label, .action-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            margin-top: 15px;
-            transition: 0.3s;
-            border: none;
-            color: white;
-        }
-
-        .upload-label {
-            background: var(--space-blue);
-            transform-origin: center;
-            transition: transform 0.3s, background 0.3s;
-        }
-
-        .upload-label:hover {
-            background: #283593;
-            transform: translateY(-2px);
-        }
-
-        .action-buttons {
-            display: none;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .action-btn {
-            padding: 12px;
-            margin: 0;
-        }
-
-        .action-btn.convert {
-            background: #28a745;
-        }
-
-        .action-btn.psr {
-            background: #dc3545;
-        }
-
-        .action-btn.analyze {
-            background: #17a2b8;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-2px);
-            filter: brightness(110%);
-        }
-
-        .preview-container {
-            margin-top: 20px;
-            position: relative;
-            display: none;
-        }
-
-        .preview {
-            width: 100%;
-            max-height: 300px;
-            object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .status-message {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 2rem;
-            border-radius: 5px;
-            background: rgba(76, 175, 80, 0.9);
-            color: white;
-            display: none;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deprecated Upload Page</title>
+  <meta http-equiv="refresh" content="0; url=./index.html">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #0b1020;
+      color: #edf2ff;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      text-align: center;
+    }
+    a { color: #8fb2ff; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="upload-box">
-            <h2>Advanced Image to 3D Converter</h2>
-
-            <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
-            <label for="fileInput" class="upload-label">Choose an Image</label>
-
-            <div class="preview-container">
-                <img id="preview" class="preview">
-            </div>
-
-            <div class="action-buttons" id="actionButtons">
-                <button class="action-btn convert" onclick="convert3D()">Convert to 3D</button>
-                <button class="action-btn psr" onclick="performPSR()">PSR Analysis</button>
-                <button class="action-btn analyze" onclick="performAnalysis()">Deep Analysis</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="status-message" id="statusMessage"></div>
-
-    <script>
-        function previewImage(event) {
-            const reader = new FileReader();
-            reader.onload = function() {
-                const preview = document.getElementById('preview');
-                const previewContainer = document.querySelector('.preview-container');
-                const actionButtons = document.getElementById('actionButtons');
-                
-                preview.src = reader.result;
-                previewContainer.style.display = 'block';
-                actionButtons.style.display = 'grid';
-            };
-            reader.readAsDataURL(event.target.files[0]);
-        }
-
-        function showMessage(message, type = 'success') {
-            const statusEl = document.getElementById('statusMessage');
-            statusEl.textContent = message;
-            statusEl.style.background = type === 'success' 
-                ? 'rgba(76, 175, 80, 0.9)' 
-                : 'rgba(244, 67, 54, 0.9)';
-            statusEl.style.display = 'block';
-            
-            setTimeout(() => {
-                statusEl.style.display = 'none';
-            }, 3000);
-        }
-
-        function convert3D() {
-            // Implement 3D conversion logic
-            showMessage('Converting image to 3D model...');
-            // Simulated API call
-            setTimeout(() => {
-                showMessage('3D model generated successfully!');
-            }, 2000);
-        }
-
-        function performPSR() {
-            // Implement PSR analysis logic
-            showMessage('Performing PSR analysis...');
-            // Simulated API call
-            setTimeout(() => {
-                showMessage('PSR analysis completed!');
-            }, 1500);
-        }
-
-        function performAnalysis() {
-            // Implement deep analysis logic
-            showMessage('Performing deep analysis...');
-            // Simulated API call
-            setTimeout(() => {
-                showMessage('Analysis completed!');
-            }, 1800);
-        }
-    </script>
+  <main>
+    <h1>Upload page deprecated</h1>
+    <p>This page has moved to a single frontend entrypoint.</p>
+    <p>If you are not redirected automatically, open <a href="./index.html">index.html</a>.</p>
+  </main>
 </body>
 </html>
