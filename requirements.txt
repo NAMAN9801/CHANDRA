@@ -1,10 +1,9 @@
+flask
+gunicorn
 matplotlib
 numpy
 opencv-python
 pandas
+pillow
 scikit-image
 scipy
-numpy
-opencv-python
-PyQt5
-flask
