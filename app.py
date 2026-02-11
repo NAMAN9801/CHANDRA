@@ -120,5 +120,12 @@ def analyze_image():
 @app.route('/', methods=['GET'])
 def index():
     return "Image Upload and Analysis Service is running."
+
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'ok'}), 200
+
+
 if __name__ == '__main__':
     app.run(debug=True)

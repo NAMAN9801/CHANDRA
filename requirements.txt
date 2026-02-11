@@ -1,10 +1,11 @@
+flask
 matplotlib
 numpy
 opencv-python
 pandas
+Pillow
+PyQt5
+requests
 scikit-image
 scipy
-numpy
-opencv-python
-PyQt5
-flask
+pytest
