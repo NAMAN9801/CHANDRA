@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, send_file
 import os
-import io
 from PIL import Image
 import uuid
 import subprocess

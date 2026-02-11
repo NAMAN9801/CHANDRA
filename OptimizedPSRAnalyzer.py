@@ -7,8 +7,6 @@ import pandas as pd
 from scipy import ndimage
 from skimage import feature
 import requests
-import io
-import sys
 
 class OptimizedPSRAnalyzer:
     def __init__(self):
