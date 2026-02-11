@@ -3,25 +3,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import os
-import pandas as pd
 from scipy import ndimage
 from skimage import feature
 import requests
-import io
-import sys
+import json
 
 class OptimizedPSRAnalyzer:
-    def __init__(self):
+    def __init__(self, output_dir=None):
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.output_dir = f"psr_analysis_{self.timestamp}"
+        self.output_dir = output_dir or f"psr_analysis_{self.timestamp}"
         os.makedirs(self.output_dir, exist_ok=True)
 
     def print_progress(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
 
     def load_sample_image(self, url):
-        self.print_progress(f"Loading image from URL: {url}")
+        self.print_progress(f"Loading image: {url}")
         try:
+            if os.path.exists(url):
+                image = cv2.imread(url, cv2.IMREAD_GRAYSCALE)
+                if image is None:
+                    raise ValueError("Failed to decode image from file")
+                return image
+
             # Download image from URL
             response = requests.get(url)
             response.raise_for_status()  # Raise exception for bad status codes
@@ -97,7 +101,8 @@ class OptimizedPSRAnalyzer:
         return stats
 
     def save_results(self, stats, output_path):
-        pd.DataFrame(stats).to_csv(os.path.join(output_path, 'statistics.csv'))
+        with open(os.path.join(output_path, 'statistics.json'), 'w', encoding='utf-8') as f:
+            json.dump(stats, f, indent=2, default=lambda x: x.tolist() if hasattr(x, 'tolist') else str(x))
 
     def assess_landing_safety(self, terrain_analysis, stats, psr_results):
         """
