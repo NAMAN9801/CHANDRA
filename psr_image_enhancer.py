@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from skimage import exposure
 
 def preprocess_image(image):
     # Apply mild initial noise reduction
