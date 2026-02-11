@@ -1,431 +1,433 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Chandra</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600&display=swap');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Chandra | Upload & Analyze</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --surface: #121a31;
+      --surface-2: #1b2647;
+      --text: #edf2ff;
+      --muted: #b9c4ea;
+      --accent: #4e7cff;
+      --success: #2ea043;
+      --error: #d73a49;
+      --border: #2d3c6a;
+      --focus: #8fb2ff;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            overflow-x: hidden;
-            font-family: 'Orbitron', sans-serif;
-            background: #000;
-            color: white;
-            scroll-behavior: smooth;
-        }
-        #scene-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            transition: filter 0.3s;
-        }
-        .content {
-            position: relative;
-            text-align: center;
-            padding: 50px;
-            z-index: 1;
-        }
-        .section {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            perspective: 1px;
-            transform-style: preserve-3d;
-        }
-        .section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: inherit;
-            transform: translateZ(-1px) scale(2);
-            z-index: -1;
-            opacity: 0.5;
-        }
-        .title {
-            font-size: 5em;
-            margin-bottom: 0.5em;
-            text-shadow: 0 0 10px rgba(255,255,255,0.5);
-            animation: glow 2s infinite;
-        }
-        .subtitle {
-            font-size: 1.5em;
-            margin-bottom: 2em;
-            opacity: 0.8;
-        }
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            transition: opacity 1s;
-        }
-        .loading-text {
-            color: white;
-            font-size: 2em;
-            animation: pulse 1s infinite;
-        }
-        .explore-btn, .nav-btn {
-            padding: 1em 2em;
-            border: 2px solid white;
-            background: transparent;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 1.2em;
-            margin: 10px;
-            position: relative;
-            overflow: hidden;
-        }
-        .explore-btn:hover, .nav-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-        .explore-btn::before, .nav-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s;
-            transform: scaleX(0);
-            transform-origin: left;
-        }
-        .explore-btn:hover::before, .nav-btn:hover::before {
-            transform: scaleX(1);
-        }
-        .nav {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-        .about, .features, .contact {
-            opacity: 0;
-            animation: fadeIn 2s ease-in forwards;
-        }
-        .card-container {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            width: 100%;
-            max-width: 1200px;
-        }
-        .card {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px;
-            transition: transform 0.3s, background 0.3s;
-            width: 300px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-        }
-        .card:nth-child(even) {
-            align-self: flex-end;
-        }
-        .card:hover {
-            transform: translateY(-10px);
-            background: rgba(255, 255, 255, 0.2);
-        }
-        .gallery {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .gallery img {
-            width: 200px;
-            height: 200px;
-            object-fit: cover;
-            margin: 10px;
-            border-radius: 10px;
-            transition: transform 0.3s;
-        }
-        .gallery img:hover {
-            transform: scale(1.1);
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 20px;
-            border-radius: 10px;
-            z-index: 100;
-        }
-        .modal.show {
-            display: flex;
-        }
-        .modal-content {
-            background: white;
-            color: black;
-            padding: 20px;
-            border-radius: 10px;
-        }
-        .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 1.5em;
-            cursor: pointer;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes glow {
-            0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-            50% { text-shadow: 0 0 20px rgba(255,255,255,1); }
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+    * {
+      box-sizing: border-box;
+    }
 
-        /* --- Adjusted Styles Below --- */
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #1b2950 0, var(--bg) 50%);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
 
-        .section h2 { /* Targeting the section titles (About, Features, Contact Us) */
-            font-size: 3.0em; /* Increased font size - adjust as needed */
-            margin-bottom: 40px; /* Increased margin below titles for spacing - adjust as needed */
-        }
+    main {
+      width: min(980px, 100%);
+      background: color-mix(in oklab, var(--surface), #000 10%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+    }
 
-        .card-container {
-            margin-top: 30px; /* Added margin above card container for spacing from the title - adjust as needed */
-        }
+    h1 {
+      margin: 0 0 0.25rem;
+      font-size: clamp(1.4rem, 2.2vw, 2rem);
+    }
 
-    </style>
+    .lede {
+      margin: 0 0 1rem;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .panel {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      color: var(--text);
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0f1730;
+    }
+
+    .actions {
+      margin-top: 0.85rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 0.65rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: white;
+      background: var(--accent);
+    }
+
+    button[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: #334671;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .state {
+      margin-top: 0.85rem;
+      border-radius: 8px;
+      padding: 0.7rem;
+      font-weight: 600;
+      background: #192542;
+      border: 1px solid #2f487b;
+    }
+
+    .state.success {
+      border-color: #3e8a54;
+      background: #1e3d28;
+    }
+
+    .state.error {
+      border-color: #8d4452;
+      background: #3c1f26;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-top: 0.5rem;
+    }
+
+    .preview {
+      width: 100%;
+      min-height: 200px;
+      max-height: 50vh;
+      object-fit: contain;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #0f1730;
+    }
+
+    .output {
+      white-space: pre-wrap;
+      margin: 0;
+      line-height: 1.35;
+      color: #eaf0ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9rem;
+      background: #0d152d;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem;
+      max-height: 36vh;
+      overflow: auto;
+    }
+
+    dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.3rem 0.8rem;
+      margin: 0;
+    }
+
+    dt {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    dd {
+      margin: 0;
+    }
+
+    @media (min-width: 860px) {
+      .grid {
+        grid-template-columns: minmax(340px, 1fr) minmax(320px, 1fr);
+      }
+    }
+  </style>
 </head>
 <body>
-    <div id="scene-container"></div>
-    <div class="loading-screen">
-        <div class="loading-text">Loading Universe...</div>
+  <main>
+    <h1>Project Chandra Image Analyzer</h1>
+    <p class="lede">Upload an image, preview it, then run backend analysis in one flow.</p>
+
+    <div class="grid">
+      <section class="panel" aria-labelledby="uploadHeading">
+        <h2 id="uploadHeading">1) Select and Upload</h2>
+        <form id="uploadForm" novalidate>
+          <label for="imageInput">Image file (PNG, JPG, JPEG, WEBP up to 10MB)</label>
+          <input id="imageInput" name="image" type="file" accept="image/png,image/jpeg,image/webp" required>
+          <p id="validationHelp" class="muted">Tip: press Enter on this file picker, then choose your image.</p>
+          <div class="actions">
+            <button id="uploadBtn" type="submit">Upload image</button>
+            <button id="analyzeBtn" class="secondary" type="button" disabled>Analyze uploaded image</button>
+          </div>
+        </form>
+        <div id="status" class="state" role="status" aria-live="polite">State: idle</div>
+        <p class="muted" id="errorText" hidden></p>
+      </section>
+
+      <section class="panel" aria-labelledby="previewHeading">
+        <h2 id="previewHeading">2) Preview and Results</h2>
+        <img id="preview" class="preview" alt="No uploaded image yet." src="" hidden>
+        <p id="noPreview" class="muted">No image uploaded yet.</p>
+
+        <h3>Metrics</h3>
+        <dl>
+          <dt>Upload time</dt><dd id="uploadTime">—</dd>
+          <dt>Analysis time</dt><dd id="analysisTime">—</dd>
+          <dt>Total time</dt><dd id="totalTime">—</dd>
+          <dt>Image URL</dt><dd id="displayUrl">—</dd>
+        </dl>
+
+        <h3>Analysis Result</h3>
+        <pre id="analysisOutput" class="output" aria-live="polite">No analysis yet.</pre>
+      </section>
     </div>
-  
-    <div class="content section" id="home">
-        <h1 class="title">CHANDRA</h1>
-        <p class="subtitle">Critical Hyperspectral Analysis of Naturally Dark Remote Craters</p>
-        <button class="explore-btn" onclick="location.href='upload.html'">Begin Journey</button>
+  </main>
 
-    </div>
-    <div class="content section about" id="about">
-        <h2>About Project Chandra</h2>
-        <div class="card-container">
-            <div class="card">
-                <h3>Our Mission</h3>
-                <p>To explore the cosmic frontier and uncover the mysteries of the universe.</p>
-            </div>
-            <div class="card">
-                <h3>Our Vision</h3>
-                <p>To inspire future generations through space exploration and innovation.</p>
-            </div>
-        </div>
-    </div>
-    <div class="content section features" id="features">
-        <h2>Features</h2>
-        <div class="card-container">
-            <div class="card">
-                <h3>Advanced Technology</h3>
-                <p>Utilizing state-of-the-art technology to push the boundaries of space exploration.</p>
-            </div>
-            <div class="card">
-                <h3>Innovative Research</h3>
-                <p>Conducting groundbreaking research to understand the cosmos better.</p>
-            </div>
-        </div>
-      
-    </div>
-    <div class="content section contact" id="contact">
-        <h2>Contact Us</h2>
-        <div class="card-container">
-            <div class="card">
-                <h3>Get in Touch</h3>
-                <p>Reach out to our team to learn more about Project Chandra and its mission.</p>
-                <button class="explore-btn" onclick="openModal()">Contact Form</button>
-            </div>
-        </div>
-    </div>
-    <div class="modal" id="modal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closeModal()">&times;</button>
-            <h3>Contact Form</h3>
-            <form>
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name" required>
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-                <label for="message">Message:</label>
-                <textarea id="message" name="message" rows="4" required></textarea>
-                <button type="submit">Submit</button>
-            </form>
-        </div>
-    </div>
+  <script>
+    const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+    const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 
-    <script>
-        // Texture URLs
-        const textureURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/lroc_color_poles_1k.jpg";
-        const displacementURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/ldem_3_8bit.jpg";
-        const worldURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/hipp8_s.jpg";
+    const els = {
+      form: document.getElementById('uploadForm'),
+      input: document.getElementById('imageInput'),
+      uploadBtn: document.getElementById('uploadBtn'),
+      analyzeBtn: document.getElementById('analyzeBtn'),
+      preview: document.getElementById('preview'),
+      noPreview: document.getElementById('noPreview'),
+      status: document.getElementById('status'),
+      errorText: document.getElementById('errorText'),
+      output: document.getElementById('analysisOutput'),
+      uploadTime: document.getElementById('uploadTime'),
+      analysisTime: document.getElementById('analysisTime'),
+      totalTime: document.getElementById('totalTime'),
+      displayUrl: document.getElementById('displayUrl')
+    };
 
-        // Scene setup
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('scene-container').appendChild(renderer.domElement);
+    const state = {
+      step: 'idle',
+      selectedFile: null,
+      displayUrl: null,
+      startedAt: null,
+      uploadMs: null,
+      analysisMs: null
+    };
 
-        // Loading manager
-        const loadingManager = new THREE.LoadingManager();
-        let texturesLoaded = 0;
-        const totalTextures = 3;
+    function setState(step, message, type = '') {
+      state.step = step;
+      els.status.textContent = `State: ${step}${message ? ` — ${message}` : ''}`;
+      els.status.className = `state ${type}`.trim();
+      const busy = step === 'uploading' || step === 'analyzing';
+      els.uploadBtn.disabled = busy;
+      els.analyzeBtn.disabled = busy || !state.displayUrl;
+    }
 
-        loadingManager.onLoad = () => {
-            texturesLoaded++;
-            if (texturesLoaded >= totalTextures) {
-                document.querySelector('.loading-screen').style.opacity = 0;
-                setTimeout(() => {
-                    document.querySelector('.loading-screen').style.display = 'none';
-                }, 1000);
-            }
-        };
+    function setError(message) {
+      els.errorText.hidden = false;
+      els.errorText.textContent = message;
+    }
 
-        // Texture loader
-        const textureLoader = new THREE.TextureLoader(loadingManager);
+    function clearError() {
+      els.errorText.hidden = true;
+      els.errorText.textContent = '';
+    }
 
-        // Load textures first
-        Promise.all([
-            new Promise(resolve => textureLoader.load(textureURL, resolve)),
-            new Promise(resolve => textureLoader.load(displacementURL, resolve)),
-            new Promise(resolve => textureLoader.load(worldURL, resolve))
-        ]).then(([texture, displacementMap, worldTexture]) => {
-            // Moon creation
-            const geometry = new THREE.SphereGeometry(2, 60, 60);
-            const material = new THREE.MeshPhongMaterial({
-                color: 0xffffff,
-                map: texture,
-                displacementMap: displacementMap,
-                displacementScale: 0.06,
-                bumpMap: displacementMap,
-                bumpScale: 0.04,
-                reflectivity: 0,
-                shininess: 0
-            });
+    function formatMs(ms) {
+      return Number.isFinite(ms) ? `${(ms / 1000).toFixed(2)}s` : '—';
+    }
 
-            const moon = new THREE.Mesh(geometry, material);
-            moon.rotation.x = 3.1415 * 0.02;
-            moon.rotation.y = 3.1415 * 1.54;
+    function updateMetrics() {
+      els.uploadTime.textContent = formatMs(state.uploadMs);
+      els.analysisTime.textContent = formatMs(state.analysisMs);
+      const total = (state.uploadMs ?? 0) + (state.analysisMs ?? 0);
+      els.totalTime.textContent = total ? formatMs(total) : '—';
+      if (state.displayUrl) {
+        els.displayUrl.innerHTML = '';
+        const link = document.createElement('a');
+        link.href = state.displayUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = state.displayUrl;
+        link.style.color = '#8fb2ff';
+        els.displayUrl.appendChild(link);
+      } else {
+        els.displayUrl.textContent = '—';
+      }
+    }
 
-            // World background (stars)
-            const worldGeometry = new THREE.SphereGeometry(1000, 60, 60);
-            const worldMaterial = new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                map: worldTexture,
-                side: THREE.BackSide
-            });
-            const world = new THREE.Mesh(worldGeometry, worldMaterial);
+    function validateFile(file) {
+      if (!file) {
+        return 'Please select an image file.';
+      }
+      if (!ALLOWED_TYPES.has(file.type)) {
+        return `Unsupported file type: ${file.type || 'unknown'}. Use PNG, JPG, JPEG, or WEBP.`;
+      }
+      if (file.size > MAX_SIZE_BYTES) {
+        return `File is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum is 10MB.`;
+      }
+      return null;
+    }
 
-            // Lighting
-            const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
-            directionalLight.position.set(-100, 10, 50);
+    function renderPreview(file) {
+      const objectUrl = URL.createObjectURL(file);
+      els.preview.src = objectUrl;
+      els.preview.alt = `Preview of selected image: ${file.name}`;
+      els.preview.hidden = false;
+      els.noPreview.hidden = true;
+    }
 
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.1);
-            hemiLight.color.setHSL(0.6, 1, 0.6);
-            hemiLight.groundColor.setHSL(0.095, 1, 0.75);
-            hemiLight.position.set(0, 0, 0);
+    async function parseBackendError(response) {
+      try {
+        const payload = await response.json();
+        return payload.error || `Request failed with status ${response.status}`;
+      } catch {
+        return `Request failed with status ${response.status}`;
+      }
+    }
 
-            // Add everything to scene
-            scene.add(moon);
-            scene.add(world);
-            scene.add(directionalLight);
-            scene.add(hemiLight);
+    async function uploadImage(event) {
+      event.preventDefault();
+      clearError();
 
-            // Camera position
-            camera.position.z = 5;
+      const file = els.input.files[0];
+      const validationError = validateFile(file);
+      if (validationError) {
+        setState('error', 'validation failed', 'error');
+        setError(validationError);
+        return;
+      }
 
-            // Animation loop
-            function animate() {
-                requestAnimationFrame(animate);
+      renderPreview(file);
+      state.selectedFile = file;
+      state.displayUrl = null;
+      state.analysisMs = null;
+      state.uploadMs = null;
+      updateMetrics();
+      els.output.textContent = 'No analysis yet.';
 
-                // Rotate moon
-                moon.rotation.y += 0.001;
-                moon.rotation.x += 0.0001;
+      const formData = new FormData();
+      formData.append('image', file);
 
-                // Rotate world background
-                world.rotation.y += 0.0001;
-                world.rotation.x += 0.0005;
+      setState('uploading', 'sending file to /upload');
+      const started = performance.now();
 
-                renderer.render(scene, camera);
-            }
+      try {
+        const response = await fetch('/upload', { method: 'POST', body: formData });
+        if (!response.ok) {
+          throw new Error(await parseBackendError(response));
+        }
 
-            animate();
+        const payload = await response.json();
+        if (!payload.display_url) {
+          throw new Error('Backend did not return display_url.');
+        }
 
-            // Remove loading screen
-            document.querySelector('.loading-screen').style.opacity = 0;
-            setTimeout(() => {
-                document.querySelector('.loading-screen').style.display = 'none';
-            }, 1000);
+        state.uploadMs = performance.now() - started;
+        state.displayUrl = payload.display_url;
+
+        els.preview.src = payload.display_url;
+        els.preview.alt = `Uploaded image returned by server: ${file.name}`;
+
+        updateMetrics();
+        setState('success', 'image uploaded', 'success');
+      } catch (err) {
+        setState('error', 'upload failed', 'error');
+        setError(err.message || 'Upload failed.');
+      }
+    }
+
+    async function analyzeImage() {
+      clearError();
+
+      if (!state.displayUrl) {
+        setState('error', 'no uploaded image', 'error');
+        setError('Upload an image first before analysis.');
+        return;
+      }
+
+      setState('analyzing', 'sending identifier to /analyze');
+      const started = performance.now();
+
+      try {
+        const response = await fetch('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ display_url: state.displayUrl })
         });
 
-        // Handle window resize
-        function onResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        if (!response.ok) {
+          throw new Error(await parseBackendError(response));
         }
 
-        window.addEventListener('resize', onResize, false);
+        const payload = await response.json();
+        state.analysisMs = performance.now() - started;
+        updateMetrics();
 
-        // Scroll to section
-        function scrollToSection(sectionId) {
-            document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
-        }
+        els.output.textContent = payload.analysis_result || 'Analysis completed, but no output returned.';
+        setState('success', 'analysis complete', 'success');
+      } catch (err) {
+        setState('error', 'analysis failed', 'error');
+        setError(err.message || 'Analysis failed.');
+      }
+    }
 
-        // Modal functionality
-        function openModal() {
-            document.getElementById('modal').classList.add('show');
-            document.getElementById('scene-container').style.filter = 'blur(20px)';
-        }
+    els.form.addEventListener('submit', uploadImage);
+    els.analyzeBtn.addEventListener('click', analyzeImage);
+    els.input.addEventListener('change', () => {
+      clearError();
+      const file = els.input.files[0];
+      const validationError = validateFile(file);
+      if (validationError) {
+        setState('error', 'validation failed', 'error');
+        setError(validationError);
+        return;
+      }
+      renderPreview(file);
+      setState('idle', 'file selected');
+    });
 
-        function closeModal() {
-            document.getElementById('modal').classList.remove('show');
-            document.getElementById('scene-container').style.filter = 'blur(0)';
-        }
-
-        // Blur background on scroll
-        window.addEventListener('scroll', () => {
-            const scrollPosition = window.scrollY;
-            const blurValue = Math.min(scrollPosition / 500, 5);
-            document.getElementById('scene-container').style.filter = `blur(${blurValue}px)`;
-        });
-    </script>
+    setState('idle');
+  </script>
 </body>
 </html>
