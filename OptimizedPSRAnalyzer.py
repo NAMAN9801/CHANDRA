@@ -3,17 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import os
-import pandas as pd
+import json
 from scipy import ndimage
 from skimage import feature
-import requests
-import io
 import sys
 
 class OptimizedPSRAnalyzer:
-    def __init__(self):
+    def __init__(self, output_dir=None):
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.output_dir = f"psr_analysis_{self.timestamp}"
+        self.output_dir = output_dir or f"psr_analysis_{self.timestamp}"
         os.makedirs(self.output_dir, exist_ok=True)
 
     def print_progress(self, message):
@@ -103,7 +101,13 @@ class OptimizedPSRAnalyzer:
         return stats
 
     def save_results(self, stats, output_path):
-        pd.DataFrame(stats).to_csv(os.path.join(output_path, 'statistics.csv'))
+        serializable_stats = {
+            'image_stats': {k: float(v) for k, v in stats['image_stats'].items()},
+            'psr_coverage': {k: float(v) for k, v in stats['psr_coverage'].items()},
+            'landing_assessment': stats.get('landing_assessment', {})
+        }
+        with open(os.path.join(output_path, 'statistics.json'), 'w', encoding='utf-8') as file_obj:
+            json.dump(serializable_stats, file_obj, indent=2)
 
     def create_visualization(self, image, psr_results, terrain_analysis, stats):
         """Main visualization of the program"""
@@ -152,9 +156,8 @@ class OptimizedPSRAnalyzer:
         return fig
 
     def analyze_and_visualize(self, image_path):
-        """Main analysis function"""
-        # Load image from local file
-        image = self.load_sample_image(image_path)
+        """Run full image analysis pipeline for a local file path."""
+        image = self.load_local_image(image_path)
         if image is None:
             return None
 
@@ -180,8 +183,29 @@ class OptimizedPSRAnalyzer:
         output_path = os.path.join(self.output_dir, 'analysis_result.png')
         plt.savefig(output_path)
         plt.close()
-        
-        return output_path
+
+        return {
+            'output_image_path': output_path,
+            'stats': {
+                'image_stats': {k: float(v) for k, v in stats['image_stats'].items()},
+                'psr_coverage': {k: float(v) for k, v in stats['psr_coverage'].items()}
+            },
+            'landing_assessment': stats['landing_assessment']
+        }
+
+
+def run_analysis(image_path, output_dir=None):
+    """Function-level API for programmatic use.
+
+    Returns structured metadata for API clients.
+    """
+    analyzer = OptimizedPSRAnalyzer(output_dir=output_dir)
+    result = analyzer.analyze_and_visualize(image_path)
+
+    if result is None:
+        raise ValueError("Analysis failed for image path")
+
+    return result
 
 def main():
     analyzer = OptimizedPSRAnalyzer()
