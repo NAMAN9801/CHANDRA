@@ -4,3 +4,7 @@ opencv-python
 pandas
 scikit-image
 scipy
+flask
+flask-cors
+pillow
+requests

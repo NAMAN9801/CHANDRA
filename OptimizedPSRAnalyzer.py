@@ -19,19 +19,25 @@ class OptimizedPSRAnalyzer:
     def print_progress(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
 
-    def load_sample_image(self, url):
-        self.print_progress(f"Loading image from URL: {url}")
+    def load_sample_image(self, image_source):
+        """Load image from local file path or URL"""
+        self.print_progress(f"Loading image from: {image_source}")
         try:
-            # Download image from URL
-            response = requests.get(url)
-            response.raise_for_status()  # Raise exception for bad status codes
-            
-            # Convert to numpy array
-            image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
-            image = cv2.imdecode(image_array, cv2.IMREAD_GRAYSCALE)
+            # Check if it's a URL or local file path
+            if image_source.startswith(('http://', 'https://')):
+                # Download image from URL
+                response = requests.get(image_source)
+                response.raise_for_status()
+                image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
+                image = cv2.imdecode(image_array, cv2.IMREAD_GRAYSCALE)
+            else:
+                # Load from local file
+                if not os.path.exists(image_source):
+                    raise FileNotFoundError(f"Image file not found: {image_source}")
+                image = cv2.imread(image_source, cv2.IMREAD_GRAYSCALE)
             
             if image is None:
-                raise ValueError("Failed to decode image from URL")
+                raise ValueError("Failed to decode image")
             return image
         except Exception as e:
             self.print_progress(f"Error loading image: {str(e)}")
@@ -99,48 +105,7 @@ class OptimizedPSRAnalyzer:
     def save_results(self, stats, output_path):
         pd.DataFrame(stats).to_csv(os.path.join(output_path, 'statistics.csv'))
 
-    def assess_landing_safety(self, terrain_analysis, stats, psr_results):
-        """
-        Assess if it's safe to land a rover based on terrain characteristics
-        Returns: tuple (bool, str) - (is_safe, explanation)
-        """
-        # Define safety thresholds
-        ROUGHNESS_THRESHOLD = 40  # Maximum acceptable surface roughness
-        MIN_FLAT_AREA_PERCENTAGE = 30  # Minimum required relatively flat area
-        MAX_EDGE_DENSITY = 15  # Maximum acceptable edge density percentage
-        
-        # Calculate mean roughness from terrain analysis
-        mean_roughness = np.mean(terrain_analysis['roughness'])
-        
-        # Calculate flat area percentage (inverse of edge density)
-        edge_density = (np.sum(psr_results['edges'] > 0) / psr_results['edges'].size) * 100
-        flat_area_percentage = 100 - edge_density
-        
-        # Check conditions
-        conditions = {
-            "Terrain Roughness": mean_roughness < ROUGHNESS_THRESHOLD,
-            "Flat Area": flat_area_percentage > MIN_FLAT_AREA_PERCENTAGE,
-            "Edge Density": edge_density < MAX_EDGE_DENSITY
-        }
-        
-        # Generate detailed explanation
-        explanation = "Landing Site Analysis:\n"
-        for factor, is_safe in conditions.items():
-            status = "SAFE" if is_safe else "UNSAFE"
-            if factor == "Terrain Roughness":
-                explanation += f"- {factor}: {status} (Value: {mean_roughness:.1f})\n"
-            elif factor == "Flat Area":
-                explanation += f"- {factor}: {status} (Value: {flat_area_percentage:.1f}%)\n"
-            else:
-                explanation += f"- {factor}: {status} (Value: {edge_density:.1f}%)\n"
-        
-        # Final decision - all conditions must be met
-        is_safe = all(conditions.values())
-        explanation += f"\nFINAL ASSESSMENT: {'SAFE for landing' if is_safe else 'UNSAFE for landing'}"
-        
-        return is_safe, explanation
-
-    def create_visualization(self, image, psr_results, terrain_analysis, stats, landing_explanation):
+    def create_visualization(self, image, psr_results, terrain_analysis, stats):
         """Main visualization of the program"""
         fig = plt.figure(figsize=(15, 12))  # Increased height to accommodate text
         plt.subplots_adjust(hspace=0.4)  # Increase vertical space between subplots
@@ -179,8 +144,7 @@ class OptimizedPSRAnalyzer:
             f"\nImage Statistics:\n"
             f"Mean: {stats['image_stats']['mean']:.1f}\n"
             f"Std: {stats['image_stats']['std']:.1f}\n"
-            f"Dynamic Range: {stats['image_stats']['dynamic_range']}\n"
-            f"\n{landing_explanation}"
+            f"Dynamic Range: {stats['image_stats']['dynamic_range']}"
         )
         ax6.text(0.1, 0.5, stats_text, fontsize=10)
         
@@ -206,22 +170,11 @@ class OptimizedPSRAnalyzer:
         self.print_progress("Calculating statistics...")
         stats = self.calculate_statistics(enhanced, psr_results)
 
-        self.print_progress("Assessing landing safety...")
-        is_safe, landing_explanation = self.assess_landing_safety(
-            terrain_analysis, stats, psr_results
-        )
-        
-        # Add landing assessment to stats
-        stats['landing_assessment'] = {
-            'is_safe': is_safe,
-            'explanation': landing_explanation
-        }
-
         self.print_progress("Saving results...")
         self.save_results(stats, self.output_dir)
 
         self.print_progress("Creating visualization...")
-        fig = self.create_visualization(image, psr_results, terrain_analysis, stats, landing_explanation)
+        fig = self.create_visualization(image, psr_results, terrain_analysis, stats)
         
         # Save figure locally
         output_path = os.path.join(self.output_dir, 'analysis_result.png')
@@ -233,11 +186,11 @@ class OptimizedPSRAnalyzer:
 def main():
     analyzer = OptimizedPSRAnalyzer()
     
-    # Example URL of an image
-    image_url = "http://127.0.0.1:5000/display/c2af9fbf-417b-4e7d-ae1e-18eb96d61840.png"
+    # Specify your image path here
+    image_path = "image copy.png"
     
     # Run analysis and get result path
-    result_path = analyzer.analyze_and_visualize(image_url)
+    result_path = analyzer.analyze_and_visualize(image_path)
     if result_path:
         print(f"Analysis complete! Result image saved at: {result_path}")
     else:
