@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results - Project Chandra</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow-x: hidden;
+            font-family: 'Orbitron', sans-serif;
+            background: #000;
+            color: white;
+            scroll-behavior: smooth;
+        }
+        #scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            transition: filter 0.3s;
+        }
+        .fixed-nav {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 50;
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            padding: 0.8em 1.5em;
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+        .section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        .title {
+            font-size: 4em;
+            margin-bottom: 0.5em;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            animation: glow 2s infinite;
+        }
+        .subtitle {
+            font-size: 1.3em;
+            margin-bottom: 2em;
+            opacity: 0.8;
+        }
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+            50% { text-shadow: 0 0 20px rgba(255,255,255,1); }
+        }
+
+        .results-container {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .visualizations-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 1200px) {
+            .visualizations-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .visualizations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .visualization {
+            text-align: center;
+        }
+        .visualization h3 {
+            font-size: 1.2em;
+            margin-bottom: 0.8rem;
+            color: #b0bec5;
+            text-shadow: 0 0 5px rgba(255,255,255,0.3);
+        }
+        .visualization img {
+            max-width: 100%;
+            max-height: 350px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stats {
+            margin: 30px 0;
+            font-size: 0.95em;
+        }
+        .stats h3 {
+            margin: 20px 0 15px 0;
+            color: #b0bec5;
+            font-size: 1.4em;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #b0bec5;
+            backdrop-filter: blur(10px);
+        }
+        .stat-item strong {
+            color: #b0bec5;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            padding: 1em 2em;
+            border: 2px solid white;
+            border-radius: 8px;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .status-message {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 5px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+            z-index: 100;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .divider {
+            height: 2px;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+            margin: 30px 0;
+        }
+
+        /* About Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: rgba(26, 23, 46, 0.95);
+            color: white;
+            padding: 2rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            margin: auto;
+        }
+        .modal-content h2 {
+            font-size: 2em;
+            margin-bottom: 1rem;
+            color: #b0bec5;
+        }
+        .modal-content p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+        .modal-content ul {
+            margin: 1rem 0 1rem 2rem;
+            line-height: 1.8;
+        }
+        .modal-content li {
+            margin-bottom: 0.5rem;
+        }
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2em;
+            cursor: pointer;
+        }
+        .close-modal:hover {
+            color: #b0bec5;
+        }
+    </style>
+</head>
+<body>
+    <div id="scene-container"></div>
+
+    <div class="fixed-nav">
+        <button class="nav-btn" onclick="openAbout()">ℹ️ About</button>
+        <button class="nav-btn" onclick="location.href='/upload'">← New Analysis</button>
+        <button class="nav-btn" onclick="location.href='/'">Home</button>
+    </div>
+
+    <div class="content">
+        <!-- Results Section -->
+        <div class="section" id="results">
+            <h1 class="title">RESULTS</h1>
+            <p class="subtitle">PSR Analysis Complete</p>
+            
+            <div class="results-container">
+                <div class="visualizations-grid">
+                    <div class="visualization">
+                        <h3>Original Image</h3>
+                        <img id="originalImage" alt="Original Image">
+                    </div>
+
+                    <div class="visualization">
+                        <h3>Enhanced Image (CLAHE)</h3>
+                        <img id="enhancedImage" alt="Enhanced Image">
+                    </div>
+
+                    <div class="visualization">
+                        <h3>PSR Detection - Threshold</h3>
+                        <img id="thresholdImage" alt="Threshold PSR">
+                    </div>
+
+                    <div class="visualization">
+                        <h3>PSR Detection - Adaptive</h3>
+                        <img id="adaptiveImage" alt="Adaptive PSR">
+                    </div>
+
+                    <div class="visualization">
+                        <h3>Edge Detection</h3>
+                        <img id="edgesImage" alt="Edges">
+                    </div>
+
+                    <div class="visualization">
+                        <h3>Surface Roughness</h3>
+                        <img id="roughnessImage" alt="Roughness">
+                    </div>
+                </div>
+                
+                <div class="divider"></div>
+
+                <div class="stats">
+                    <h3>📊 Image Statistics</h3>
+                    <div class="stats-grid" id="imageStats"></div>
+                </div>
+
+                <div class="stats">
+                    <h3>🎯 PSR Coverage Analysis</h3>
+                    <div class="stats-grid" id="psrStats"></div>
+                </div>
+
+                <div class="stats">
+                    <h3>🏔️ Terrain Analysis</h3>
+                    <div class="stats-grid" id="terrainStats"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="downloadResults()">⬇️ Download Results</button>
+                    <button class="action-btn" onclick="location.href='/upload'">🔄 Analyze Another</button>
+                    <button class="action-btn" onclick="location.href='/'">🏠 Home</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-message" id="statusMessage"></div>
+
+    <!-- About Modal -->
+    <div class="modal" id="aboutModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeAbout()">&times;</button>
+            <h2>About Project Chandra</h2>
+            <p>Project CHANDRA (Critical Hyperspectral Analysis of Naturally Dark Remote Craters) is an advanced imaging analysis system designed for crater detection and analysis using PSR (Permanently Shadowed Region) detection.</p>
+            
+            <h3 style="margin-top: 1.5rem; color: #b0bec5;">How to Use:</h3>
+            <ul>
+                <li><strong>Upload an Image:</strong> Click on "Choose an Image" to upload your own crater image for analysis.</li>
+                <li><strong>Select Test Images:</strong> Or choose from our curated test images to see immediate results.</li>
+                <li><strong>Processing:</strong> The system will analyze your image and display real-time progress with a timer.</li>
+                <li><strong>View Results:</strong> Analyze 6 different visualizations including original, enhanced, PSR detection, edges, and roughness analysis.</li>
+                <li><strong>Download:</strong> Export your complete analysis as a high-quality image.</li>
+            </ul>
+
+            <h3 style="margin-top: 1.5rem; color: #b0bec5;">Analysis Methods:</h3>
+            <ul>
+                <li><strong>CLAHE Enhancement:</strong> Improves contrast using adaptive histogram equalization.</li>
+                <li><strong>Threshold PSR:</strong> Basic threshold-based PSR region detection.</li>
+                <li><strong>Adaptive PSR:</strong> Advanced adaptive threshold approach for better accuracy.</li>
+                <li><strong>Edge Detection:</strong> Identifies crater boundaries using Canny edge detection.</li>
+                <li><strong>Roughness Analysis:</strong> Maps surface terrain variations and roughness.</li>
+            </ul>
+            
+            <p style="margin-top: 2em; padding-top: 1.5em; border-top: 1px solid rgba(255, 255, 255, 0.2);"><strong>GitHub Repository:</strong><br>
+            <a href="https://github.com/NAMAN9801/CHANDRA" target="_blank" style="color: #b0bec5; text-decoration: none; word-break: break-all;">https://github.com/NAMAN9801/CHANDRA</a></p>
+        </div>
+    </div>
+
+    <script>
+        let currentImageId = null;
+        let currentAnalysisResults = null;
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('scene-container').appendChild(renderer.domElement);
+
+        // Texture URLs
+        const textureURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/lroc_color_poles_1k.jpg";
+        const displacementURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/ldem_3_8bit.jpg";
+        const worldURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/hipp8_s.jpg";
+
+        const textureLoader = new THREE.TextureLoader();
+
+        Promise.all([
+            new Promise(resolve => textureLoader.load(textureURL, resolve, undefined, () => resolve(null))),
+            new Promise(resolve => textureLoader.load(displacementURL, resolve, undefined, () => resolve(null))),
+            new Promise(resolve => textureLoader.load(worldURL, resolve, undefined, () => resolve(null)))
+        ]).then(([texture, displacementMap, worldTexture]) => {
+            if (texture && displacementMap) {
+                const geometry = new THREE.SphereGeometry(2, 60, 60);
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0xffffff,
+                    map: texture,
+                    displacementMap: displacementMap,
+                    displacementScale: 0.06,
+                    bumpMap: displacementMap,
+                    bumpScale: 0.04,
+                    reflectivity: 0,
+                    shininess: 0
+                });
+
+                const moon = new THREE.Mesh(geometry, material);
+                moon.rotation.x = 3.1415 * 0.02;
+                moon.rotation.y = 3.1415 * 1.54;
+                scene.add(moon);
+
+                camera.position.z = 5;
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    moon.rotation.y += 0.001;
+                    moon.rotation.x += 0.0001;
+                    renderer.render(scene, camera);
+                }
+                animate();
+            }
+
+            if (worldTexture) {
+                const worldGeometry = new THREE.SphereGeometry(1000, 60, 60);
+                const worldMaterial = new THREE.MeshBasicMaterial({
+                    map: worldTexture,
+                    side: THREE.BackSide
+                });
+                const world = new THREE.Mesh(worldGeometry, worldMaterial);
+                scene.add(world);
+            }
+
+            const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+            directionalLight.position.set(-100, 10, 50);
+            scene.add(directionalLight);
+
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.1);
+            hemiLight.color.setHSL(0.6, 1, 0.6);
+            hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+            scene.add(hemiLight);
+        });
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onResize, false);
+
+        window.addEventListener('scroll', () => {
+            const scrollPosition = window.scrollY;
+            const blurValue = Math.min(scrollPosition / 500, 5);
+            document.getElementById('scene-container').style.filter = `blur(${blurValue}px)`;
+        });
+
+        // Display results
+        function displayResults(results) {
+            // Display all visualizations
+            if (results.visualizations) {
+                const visIds = {
+                    'original': 'originalImage',
+                    'enhanced': 'enhancedImage',
+                    'threshold': 'thresholdImage',
+                    'adaptive': 'adaptiveImage',
+                    'edges': 'edgesImage',
+                    'roughness': 'roughnessImage'
+                };
+
+                for (const [visType, vis] of Object.entries(results.visualizations)) {
+                    const imgId = visIds[visType];
+                    if (imgId) {
+                        const imgElement = document.getElementById(imgId);
+                        if (imgElement) {
+                            imgElement.src = 'data:image/png;base64,' + vis;
+                        }
+                    }
+                }
+            }
+
+            // Display image statistics
+            const imgStats = results.statistics.image_stats;
+            document.getElementById('imageStats').innerHTML = `
+                <div class="stat-item"><strong>Mean</strong>${imgStats.mean.toFixed(2)}</div>
+                <div class="stat-item"><strong>Std Dev</strong>${imgStats.std.toFixed(2)}</div>
+                <div class="stat-item"><strong>Min</strong>${imgStats.min}</div>
+                <div class="stat-item"><strong>Max</strong>${imgStats.max}</div>
+                <div class="stat-item"><strong>Dynamic Range</strong>${imgStats.dynamic_range}</div>
+            `;
+
+            // Display PSR coverage
+            const psrCov = results.statistics.psr_coverage;
+            document.getElementById('psrStats').innerHTML = `
+                <div class="stat-item"><strong>Threshold</strong>${psrCov.threshold.toFixed(2)}%</div>
+                <div class="stat-item"><strong>Adaptive</strong>${psrCov.adaptive.toFixed(2)}%</div>
+                <div class="stat-item"><strong>Edges</strong>${psrCov.edges.toFixed(2)}%</div>
+            `;
+
+            // Display terrain analysis
+            const terrain = results.statistics.terrain;
+            document.getElementById('terrainStats').innerHTML = `
+                <div class="stat-item"><strong>Peaks Found</strong>${terrain.peak_count}</div>
+                <div class="stat-item"><strong>Valleys Found</strong>${terrain.valley_count}</div>
+                <div class="stat-item"><strong>Mean Roughness</strong>${terrain.mean_roughness.toFixed(2)}</div>
+            `;
+        }
+
+        // Show status message
+        function showMessage(message, type = 'success') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.style.background = type === 'success' 
+                ? 'rgba(76, 175, 80, 0.9)' 
+                : 'rgba(244, 67, 54, 0.9)';
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 3000);
+        }
+
+        // Download results
+        function downloadResults() {
+            if (!currentImageId) {
+                showMessage('No analysis results to download', 'error');
+                return;
+            }
+
+            showMessage('Exporting results...');
+
+            fetch('/api/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    image_id: currentImageId,
+                    parameters: {}
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                // Download image
+                const link = document.createElement('a');
+                link.href = 'data:image/png;base64,' + data.export_image;
+                link.download = 'psr_analysis_' + new Date().getTime() + '.png';
+                link.click();
+
+                showMessage('Results downloaded!');
+            })
+            .catch(error => {
+                showMessage('Export failed: ' + error.message, 'error');
+                console.error(error);
+            });
+        }
+
+        // Modal functions
+        function openAbout() {
+            document.getElementById('aboutModal').classList.add('show');
+        }
+
+        function closeAbout() {
+            document.getElementById('aboutModal').classList.remove('show');
+        }
+
+        // Load results from sessionStorage
+        window.addEventListener('load', () => {
+            const resultsData = sessionStorage.getItem('analysisResults');
+            const imageId = sessionStorage.getItem('currentImageId');
+            
+            if (resultsData && imageId) {
+                currentImageId = imageId;
+                currentAnalysisResults = JSON.parse(resultsData);
+                displayResults(currentAnalysisResults);
+                showMessage('Results loaded successfully!');
+            } else {
+                showMessage('No analysis results found', 'error');
+            }
+
+            // Modal event listeners
+            const modal = document.getElementById('aboutModal');
+            const closeBtn = document.querySelector('.modal-close');
+            if (closeBtn) closeBtn.addEventListener('click', closeAbout);
+            if (modal) modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeAbout();
+            });
+        });
+    </script>
+</body>
+</html>

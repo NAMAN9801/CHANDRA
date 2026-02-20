@@ -3,162 +3,549 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Image to 3D Converter</title>
-
+    <title>PSR Analysis - Project Chandra</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"></script>
     <style>
-        :root {
-            --space-blue: #1a237e;
-            --moon-gray: #424242;
-            --star-white: #ffffff;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600&display=swap');
 
-        body {
-            font-family: 'Arial', sans-serif;
+        * {
             margin: 0;
             padding: 0;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #000000, #1a237e);
-            color: var(--star-white);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            box-sizing: border-box;
         }
-
-        .container {
-            max-width: 800px;
-            width: 90%;
-            padding: 2rem;
-        }
-
-        .upload-box {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 2rem;
-            backdrop-filter: blur(10px);
-            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        h2 {
-            margin: 0;
-            padding-bottom: 1.5rem;
-            background: linear-gradient(to right, #ffffff, #b0bec5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .upload-label, .action-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            margin-top: 15px;
-            transition: 0.3s;
-            border: none;
+        body {
+            overflow-x: hidden;
+            font-family: 'Orbitron', sans-serif;
+            background: #000;
             color: white;
+            scroll-behavior: smooth;
         }
-
-        .upload-label {
-            background: var(--space-blue);
-            transform-origin: center;
-            transition: transform 0.3s, background 0.3s;
-        }
-
-        .upload-label:hover {
-            background: #283593;
-            transform: translateY(-2px);
-        }
-
-        .action-buttons {
-            display: none;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .action-btn {
-            padding: 12px;
-            margin: 0;
-        }
-
-        .action-btn.convert {
-            background: #28a745;
-        }
-
-        .action-btn.psr {
-            background: #dc3545;
-        }
-
-        .action-btn.analyze {
-            background: #17a2b8;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-2px);
-            filter: brightness(110%);
-        }
-
-        .preview-container {
-            margin-top: 20px;
-            position: relative;
-            display: none;
-        }
-
-        .preview {
+        #scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-height: 300px;
-            object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            height: 100%;
+            z-index: -1;
+            transition: filter 0.3s;
         }
-
-        .status-message {
+        .fixed-nav {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 1rem 2rem;
+            z-index: 50;
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            padding: 0.8em 1.5em;
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+        .section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        .title {
+            font-size: 4em;
+            margin-bottom: 0.5em;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            animation: glow 2s infinite;
+        }
+        .subtitle {
+            font-size: 1.3em;
+            margin-bottom: 2em;
+            opacity: 0.8;
+        }
+        .upload-container {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 3rem;
+            max-width: 600px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .upload-box h2 {
+            font-size: 2em;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #ffffff, #b0bec5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        #fileInput {
+            display: none;
+        }
+        .upload-label {
+            display: block;
+            padding: 1.2em;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            margin: 15px 0;
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .upload-label:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .preview-container {
+            margin: 20px 0;
+            display: none;
+            text-align: center;
+        }
+        .preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        .action-buttons {
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .action-btn {
+            padding: 1em;
+            border: 2px solid white;
+            border-radius: 8px;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .status-message {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 1rem 1.5rem;
             border-radius: 5px;
             background: rgba(76, 175, 80, 0.9);
             color: white;
             display: none;
             animation: slideIn 0.3s ease-out;
+            z-index: 100;
         }
-
         @keyframes slideIn {
             from { transform: translateX(100%); }
             to { transform: translateX(0); }
         }
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+            50% { text-shadow: 0 0 20px rgba(255,255,255,1); }
+        }
+
+        /* Loading Indicator */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid #ffffff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            font-size: 1.5em;
+            color: white;
+        }
+        .timer {
+            font-size: 1.2em;
+            color: #b0bec5;
+        }
+
+        /* Test Gallery */
+        .test-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .test-image-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        .test-image-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2);
+        }
+        .test-image-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .test-image-card:hover img {
+            transform: scale(1.05);
+        }
+        .test-image-info {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .test-image-info h3 {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        .test-image-info p {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        /* Results Section */
+        .results-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        .results-section h2 {
+            font-size: 3em;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        .results-container {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 1000px;
+            width: 100%;
+            display: none;
+        }
+        .results-container.show {
+            display: block;
+        }
+        .visualization {
+            margin: 20px 0;
+        }
+        .visualization img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        .stats {
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+        .stats h3 {
+            margin: 15px 0 10px 0;
+            color: #b0bec5;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #b0bec5;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 2.5rem;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .modal-header h2 {
+            font-size: 1.8em;
+            margin: 0;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 2em;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .modal-close:hover {
+            color: #b0bec5;
+            transform: scale(1.1);
+        }
+        .modal-content p {
+            margin: 1em 0;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        .modal-content h3 {
+            margin: 1.5em 0 0.8em 0;
+            color: #b0bec5;
+            font-size: 1.1em;
+        }
+        .modal-content ul {
+            margin: 0.8em 0 0.8em 1.5em;
+            opacity: 0.9;
+            line-height: 1.8;
+        }
+        .modal-content li {
+            margin: 0.5em 0;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="upload-box">
-            <h2>Advanced Image to 3D Converter</h2>
+    <div id="scene-container"></div>
 
-            <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
-            <label for="fileInput" class="upload-label">Choose an Image</label>
+    <div class="fixed-nav">
+        <button class="nav-btn" onclick="location.href='/'">← Back Home</button>
+        <button class="nav-btn" onclick="openAbout()">ℹ️ About</button>
+    </div>
 
-            <div class="preview-container">
-                <img id="preview" class="preview">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Processing Your Image...</div>
+        <div class="timer" id="timer">Time: 0s</div>
+    </div>
+
+    <div class="content">
+        <!-- Upload & Analysis Section -->
+        <div class="section" id="upload">
+            <h1 class="title">ANALYZE</h1>
+            <p class="subtitle">Upload Your Crater Images for PSR Analysis</p>
+            
+            <div class="upload-container">
+                <div class="upload-box">
+                    <h2>Image Upload</h2>
+                    <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
+                    <label for="fileInput" class="upload-label">📁 Choose an Image</label>
+
+                    <div class="preview-container">
+                        <img id="preview" class="preview">
+                    </div>
+
+                    <div class="action-buttons" id="actionButtons">
+                        <button class="action-btn" onclick="performFullAnalysis()">🔍 Full PSR Analysis</button>
+                    </div>
+                </div>
             </div>
 
-            <div class="action-buttons" id="actionButtons">
-                <button class="action-btn convert" onclick="convert3D()">Convert to 3D</button>
-                <button class="action-btn psr" onclick="performPSR()">PSR Analysis</button>
-                <button class="action-btn analyze" onclick="performAnalysis()">Deep Analysis</button>
-            </div>
+            <!-- Test Images in Upload Section -->
+            <h2 style="margin-top: 3rem; margin-bottom: 1rem; font-size: 2.2em; text-shadow: 0 0 10px rgba(255,255,255,0.5);">Or Choose a Test Image</h2>
+            <div class="test-gallery" id="testGallery" style="max-width: 1200px; width: 100%;"></div>
         </div>
     </div>
 
     <div class="status-message" id="statusMessage"></div>
 
+    <!-- About Modal -->
+    <div class="modal" id="aboutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>About Project Chandra</h2>
+                <button class="modal-close">✕</button>
+            </div>
+            <p><strong>Critical Hyperspectral Analysis of Naturally Dark Remote Craters</strong></p>
+            <p>Project Chandra is an advanced crater analysis system designed to identify and characterize Permanently Shadowed Regions (PSRs) on the lunar surface. Using sophisticated image processing techniques and hyperspectral analysis, we detect and classify craters with potential scientific interest.</p>
+            
+            <h3>How to Use</h3>
+            <ul>
+                <li>Upload your crater image or select from our test gallery</li>
+                <li>The system will perform multi-stage analysis including edge detection and terrain mapping</li>
+                <li>View detailed visualizations of detected features and crater characteristics</li>
+                <li>Download your analysis results as a composite image</li>
+                <li>Export data for further research and scientific study</li>
+            </ul>
+            
+            <h3>Analysis Methods</h3>
+            <ul>
+                <li><strong>CLAHE Enhancement</strong> - Contrast Limited Adaptive Histogram Equalization for improved visibility</li>
+                <li><strong>Threshold Detection</strong> - Both binary and adaptive thresholding for crater edge identification</li>
+                <li><strong>Canny Edge Detection</strong> - Advanced edge detection for precise crater boundary mapping</li>
+                <li><strong>Terrain Roughness</strong> - Surface texture analysis using Gaussian filtering and gradient computation</li>
+                <li><strong>Advanced Visualization</strong> - Multi-layer composite images for comprehensive crater analysis</li>
+            </ul>
+            
+            <p style="margin-top: 2em; padding-top: 1.5em; border-top: 1px solid rgba(255, 255, 255, 0.2);"><strong>GitHub Repository:</strong><br>
+            <a href="https://github.com/NAMAN9801/CHANDRA" target="_blank" style="color: #b0bec5; text-decoration: none; word-break: break-all;">https://github.com/NAMAN9801/CHANDRA</a></p>
+        </div>
+    </div>
+
     <script>
+        let currentImageId = null;
+        let currentAnalysisResults = null;
+        let timerInterval = null;
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('scene-container').appendChild(renderer.domElement);
+
+        // Texture URLs
+        const textureURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/lroc_color_poles_1k.jpg";
+        const displacementURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/ldem_3_8bit.jpg";
+        const worldURL = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/17271/hipp8_s.jpg";
+
+        const textureLoader = new THREE.TextureLoader();
+
+        Promise.all([
+            new Promise(resolve => textureLoader.load(textureURL, resolve, undefined, () => resolve(null))),
+            new Promise(resolve => textureLoader.load(displacementURL, resolve, undefined, () => resolve(null))),
+            new Promise(resolve => textureLoader.load(worldURL, resolve, undefined, () => resolve(null)))
+        ]).then(([texture, displacementMap, worldTexture]) => {
+            if (texture && displacementMap) {
+                const geometry = new THREE.SphereGeometry(2, 60, 60);
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0xffffff,
+                    map: texture,
+                    displacementMap: displacementMap,
+                    displacementScale: 0.06,
+                    bumpMap: displacementMap,
+                    bumpScale: 0.04,
+                    reflectivity: 0,
+                    shininess: 0
+                });
+
+                const moon = new THREE.Mesh(geometry, material);
+                moon.rotation.x = 3.1415 * 0.02;
+                moon.rotation.y = 3.1415 * 1.54;
+                scene.add(moon);
+
+                camera.position.z = 5;
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    moon.rotation.y += 0.001;
+                    moon.rotation.x += 0.0001;
+                    renderer.render(scene, camera);
+                }
+                animate();
+            }
+
+            if (worldTexture) {
+                const worldGeometry = new THREE.SphereGeometry(1000, 60, 60);
+                const worldMaterial = new THREE.MeshBasicMaterial({
+                    map: worldTexture,
+                    side: THREE.BackSide
+                });
+                const world = new THREE.Mesh(worldGeometry, worldMaterial);
+                scene.add(world);
+            }
+
+            const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+            directionalLight.position.set(-100, 10, 50);
+            scene.add(directionalLight);
+
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.1);
+            hemiLight.color.setHSL(0.6, 1, 0.6);
+            hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+            scene.add(hemiLight);
+        });
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onResize, false);
+
+        window.addEventListener('scroll', () => {
+            const scrollPosition = window.scrollY;
+            const blurValue = Math.min(scrollPosition / 500, 5);
+            document.getElementById('scene-container').style.filter = `blur(${blurValue}px)`;
+        });
+
+        // Preview uploaded image
         function previewImage(event) {
             const reader = new FileReader();
             reader.onload = function() {
@@ -173,6 +560,22 @@
             reader.readAsDataURL(event.target.files[0]);
         }
 
+        // Show/hide loading overlay
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('active');
+            let seconds = 0;
+            timerInterval = setInterval(() => {
+                seconds++;
+                document.getElementById('timer').textContent = `Time: ${seconds}s`;
+            }, 1000);
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+            if (timerInterval) clearInterval(timerInterval);
+        }
+
+        // Show status message
         function showMessage(message, type = 'success') {
             const statusEl = document.getElementById('statusMessage');
             statusEl.textContent = message;
@@ -186,32 +589,199 @@
             }, 3000);
         }
 
-        function convert3D() {
-            // Implement 3D conversion logic
-            showMessage('Converting image to 3D model...');
-            // Simulated API call
-            setTimeout(() => {
-                showMessage('3D model generated successfully!');
-            }, 2000);
+        // Perform full analysis
+        async function performFullAnalysis() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files[0]) {
+                showMessage('Please select an image first', 'error');
+                return;
+            }
+
+            showLoading();
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            try {
+                const uploadRes = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadRes.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const uploadData = await uploadRes.json();
+                currentImageId = uploadData.image_id;
+
+                const analysisRes = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image_id: currentImageId,
+                        parameters: {}
+                    })
+                });
+
+                if (!analysisRes.ok) {
+                    throw new Error('Analysis failed');
+                }
+
+                const results = await analysisRes.json();
+                currentAnalysisResults = results;
+                
+                // Store in sessionStorage and navigate
+                sessionStorage.setItem('analysisResults', JSON.stringify(results));
+                sessionStorage.setItem('currentImageId', currentImageId);
+                
+                hideLoading();
+                window.location.href = '/results';
+
+            } catch (error) {
+                hideLoading();
+                showMessage('Error: ' + error.message, 'error');
+                console.error(error);
+            }
         }
 
-        function performPSR() {
-            // Implement PSR analysis logic
-            showMessage('Performing PSR analysis...');
-            // Simulated API call
-            setTimeout(() => {
-                showMessage('PSR analysis completed!');
-            }, 1500);
+        // Load test images
+        async function loadTestImages() {
+            try {
+                const response = await fetch('/api/test-images');
+                const images = await response.json();
+                
+                const gallery = document.getElementById('testGallery');
+                gallery.innerHTML = '';
+
+                images.forEach((img) => {
+                    const card = document.createElement('div');
+                    card.className = 'test-image-card';
+                    card.onclick = () => analyzeTestImage(img.url, img.name);
+                    card.innerHTML = `
+                        <img src="${img.url}" alt="${img.name}">
+                        <div class="test-image-info">
+                            <h3>${img.name}</h3>
+                            <p>${img.size}</p>
+                        </div>
+                    `;
+                    gallery.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading test images:', error);
+                showMessage('Error loading test images', 'error');
+            }
         }
 
-        function performAnalysis() {
-            // Implement deep analysis logic
-            showMessage('Performing deep analysis...');
-            // Simulated API call
-            setTimeout(() => {
-                showMessage('Analysis completed!');
-            }, 1800);
+        // Analyze test image
+        async function analyzeTestImage(imageUrl, imageName) {
+            showLoading();
+
+            try {
+                const response = await fetch(imageUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch test image');
+                }
+                const blob = await response.blob();
+                const formData = new FormData();
+                formData.append('image', blob, imageName + '.png');
+
+                const uploadRes = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadRes.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const uploadData = await uploadRes.json();
+                currentImageId = uploadData.image_id;
+
+                const analysisRes = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image_id: currentImageId,
+                        parameters: {}
+                    })
+                });
+
+                if (!analysisRes.ok) {
+                    throw new Error('Analysis failed');
+                }
+
+                const results = await analysisRes.json();
+                currentAnalysisResults = results;
+                
+                // Store in sessionStorage and navigate
+                sessionStorage.setItem('analysisResults', JSON.stringify(results));
+                sessionStorage.setItem('currentImageId', currentImageId);
+                
+                hideLoading();
+                window.location.href = '/results';
+
+            } catch (error) {
+                hideLoading();
+                showMessage('Error: ' + error.message, 'error');
+                console.error(error);
+            }
         }
+
+        // Download results
+        function downloadResults() {
+            if (!currentImageId) {
+                showMessage('No analysis results to download', 'error');
+                return;
+            }
+
+            showMessage('Exporting results...');
+
+            fetch('/api/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    image_id: currentImageId,
+                    parameters: {}
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                // Download image
+                const link = document.createElement('a');
+                link.href = 'data:image/png;base64,' + data.export_image;
+                link.download = 'psr_analysis_' + new Date().getTime() + '.png';
+                link.click();
+
+                showMessage('Results downloaded!');
+            })
+            .catch(error => {
+                showMessage('Export failed: ' + error.message, 'error');
+                console.error(error);
+            });
+        }
+
+        // Modal functions
+        function openAbout() {
+            document.getElementById('aboutModal').classList.add('show');
+        }
+
+        function closeAbout() {
+            document.getElementById('aboutModal').classList.remove('show');
+        }
+
+        // Load test images on page load
+        window.addEventListener('load', () => {
+            loadTestImages();
+
+            // Modal event listeners
+            const modal = document.getElementById('aboutModal');
+            const closeBtn = document.querySelector('.modal-close');
+            if (closeBtn) closeBtn.addEventListener('click', closeAbout);
+            if (modal) modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeAbout();
+            });
+        });
     </script>
 </body>
 </html>

@@ -16,7 +16,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from PIL import Image
 from scipy import ndimage
-from skimage import feature
+from skimage import feature, exposure
 from datetime import datetime
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
@@ -47,16 +47,55 @@ class ConfigurablePSRAnalyzer:
             'roughness_size': 5
         }
     
-    def enhance_image(self, image):
-        """CLAHE enhancement with configurable parameters"""
+    def preprocess_image(self, image):
+        """Apply mild initial noise reduction"""
+        denoised = cv2.fastNlMeansDenoising(image, None, h=10, searchWindowSize=21, templateWindowSize=7)
+        return denoised
+    
+    def enhance_contrast(self, image):
+        """Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)"""
         clip_limit = float(self.params.get('clahe_clip_limit', 2.0))
         tile_size = int(self.params.get('clahe_tile_size', 8))
+        clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(tile_size, tile_size))
+        enhanced = clahe.apply(image)
+        return enhanced
+    
+    def adjust_gamma(self, image, gamma=1.2):
+        """Apply gamma correction"""
+        invGamma = 1.0 / gamma
+        table = np.array([((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+        return cv2.LUT(image, table)
+    
+    def sharpen_image(self, image):
+        """Apply sharpening kernel"""
+        kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+        sharpened = cv2.filter2D(image, -1, kernel)
+        return sharpened
+    
+    def enhance_image(self, image):
+        """Comprehensive PSR image enhancement pipeline"""
+        gamma = 1.2
+        sharpen_strength = 0.5
         
-        clahe = cv2.createCLAHE(
-            clipLimit=clip_limit, 
-            tileGridSize=(tile_size, tile_size)
-        )
-        return clahe.apply(image)
+        # Preprocess: mild noise reduction
+        preprocessed = self.preprocess_image(image)
+        
+        # Enhance contrast with CLAHE
+        contrast_enhanced = self.enhance_contrast(preprocessed)
+        
+        # Adjust gamma for brightness
+        gamma_corrected = self.adjust_gamma(contrast_enhanced, gamma=gamma)
+        
+        # Sharpen the image
+        sharpened = self.sharpen_image(gamma_corrected)
+        
+        # Blend sharpened image with gamma corrected image
+        final_enhanced = cv2.addWeighted(gamma_corrected, 1 - sharpen_strength, sharpened, sharpen_strength, 0)
+        
+        # Final contrast enhancement
+        final_enhanced = self.enhance_contrast(final_enhanced)
+        
+        return final_enhanced
     
     def detect_psr(self, image):
         """PSR detection with configurable thresholds"""
@@ -197,6 +236,54 @@ image_store = {}
 def index():
     """Serve the main application"""
     return send_from_directory('static', 'index.html')
+
+
+@app.route('/upload')
+def upload():
+    """Serve the upload page"""
+    return send_from_directory('static', 'upload.html')
+
+
+@app.route('/results')
+def results():
+    """Serve the results page"""
+    return send_from_directory('static', 'results.html')
+
+
+@app.route('/api/test-images', methods=['GET'])
+def get_test_images():
+    """Return list of test images from test_assets folder"""
+    test_assets_folder = 'test_assets'
+    images = []
+    
+    if os.path.exists(test_assets_folder):
+        for filename in sorted(os.listdir(test_assets_folder)):
+            # Skip enhanced_psr_image
+            if filename.startswith('enhanced_psr_image'):
+                continue
+            
+            filepath = os.path.join(test_assets_folder, filename)
+            if os.path.isfile(filepath) and filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                try:
+                    file_size = os.path.getsize(filepath)
+                    size_str = f"{file_size / 1024:.1f} KB" if file_size < 1024 * 1024 else f"{file_size / (1024 * 1024):.1f} MB"
+                    
+                    images.append({
+                        'name': filename.split('.')[0],
+                        'url': f'/test-assets/{filename}',
+                        'path': filepath,
+                        'size': size_str
+                    })
+                except Exception as e:
+                    print(f"Error processing {filename}: {str(e)}")
+    
+    return jsonify(images)
+
+
+@app.route('/test-assets/<filename>')
+def serve_test_asset(filename):
+    """Serve test asset files"""
+    return send_from_directory('test_assets', filename)
 
 
 @app.route('/api/defaults', methods=['GET'])

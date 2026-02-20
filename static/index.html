@@ -223,10 +223,88 @@
             margin-top: 30px; /* Added margin above card container for spacing from the title - adjust as needed */
         }
 
+        /* Modal Styles */
+        .about-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        .about-modal.show {
+            display: flex;
+        }
+        .about-modal-content {
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 2.5rem;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        .about-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .about-modal-header h2 {
+            font-size: 1.8em;
+            margin: 0;
+        }
+        .about-modal-close {
+            background: none;
+            border: none;
+            font-size: 2em;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .about-modal-close:hover {
+            color: #b0bec5;
+            transform: scale(1.1);
+        }
+        .about-modal-content p {
+            margin: 1em 0;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        .about-modal-content h3 {
+            margin: 1.5em 0 0.8em 0;
+            color: #b0bec5;
+            font-size: 1.1em;
+        }
+        .about-modal-content ul {
+            margin: 0.8em 0 0.8em 1.5em;
+            opacity: 0.9;
+            line-height: 1.8;
+        }
+        .about-modal-content li {
+            margin: 0.5em 0;
+        }
+
     </style>
 </head>
 <body>
     <div id="scene-container"></div>
+
+    <div class="nav">
+        <button class="nav-btn" onclick="openAbout()">ℹ️ About</button>
+    </div>
     <div class="loading-screen">
         <div class="loading-text">Loading Universe...</div>
     </div>
@@ -234,7 +312,7 @@
     <div class="content section" id="home">
         <h1 class="title">CHANDRA</h1>
         <p class="subtitle">Critical Hyperspectral Analysis of Naturally Dark Remote Craters</p>
-        <button class="explore-btn" onclick="location.href='upload.html'">Begin Journey</button>
+        <button class="explore-btn" onclick="location.href='/upload'">Begin Journey</button>
 
     </div>
     <div class="content section about" id="about">
@@ -287,6 +365,39 @@
                 <textarea id="message" name="message" rows="4" required></textarea>
                 <button type="submit">Submit</button>
             </form>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="about-modal" id="aboutModal">
+        <div class="about-modal-content">
+            <div class="about-modal-header">
+                <h2>About Project Chandra</h2>
+                <button class="about-modal-close">✕</button>
+            </div>
+            <p><strong>Critical Hyperspectral Analysis of Naturally Dark Remote Craters</strong></p>
+            <p>Project Chandra is an advanced crater analysis system designed to identify and characterize Permanently Shadowed Regions (PSRs) on the lunar surface. Using sophisticated image processing techniques and hyperspectral analysis, we detect and classify craters with potential scientific interest.</p>
+            
+            <h3>How to Use</h3>
+            <ul>
+                <li>Upload your crater image or select from our test gallery</li>
+                <li>The system will perform multi-stage analysis including edge detection and terrain mapping</li>
+                <li>View detailed visualizations of detected features and crater characteristics</li>
+                <li>Download your analysis results as a composite image</li>
+                <li>Export data for further research and scientific study</li>
+            </ul>
+            
+            <h3>Analysis Methods</h3>
+            <ul>
+                <li><strong>CLAHE Enhancement</strong> - Contrast Limited Adaptive Histogram Equalization for improved visibility</li>
+                <li><strong>Threshold Detection</strong> - Both binary and adaptive thresholding for crater edge identification</li>
+                <li><strong>Canny Edge Detection</strong> - Advanced edge detection for precise crater boundary mapping</li>
+                <li><strong>Terrain Roughness</strong> - Surface texture analysis using Gaussian filtering and gradient computation</li>
+                <li><strong>Advanced Visualization</strong> - Multi-layer composite images for comprehensive crater analysis</li>
+            </ul>
+            
+            <p style="margin-top: 2em; padding-top: 1.5em; border-top: 1px solid rgba(255, 255, 255, 0.2);"><strong>GitHub Repository:</strong><br>
+            <a href="https://github.com/NAMAN9801/CHANDRA" target="_blank" style="color: #b0bec5; text-decoration: none; word-break: break-all;">https://github.com/NAMAN9801/CHANDRA</a></p>
         </div>
     </div>
 
@@ -419,6 +530,27 @@
             document.getElementById('modal').classList.remove('show');
             document.getElementById('scene-container').style.filter = 'blur(0)';
         }
+
+        // About modal functionality
+        function openAbout() {
+            document.getElementById('aboutModal').classList.add('show');
+            document.getElementById('scene-container').style.filter = 'blur(20px)';
+        }
+
+        function closeAbout() {
+            document.getElementById('aboutModal').classList.remove('show');
+            document.getElementById('scene-container').style.filter = 'blur(0)';
+        }
+
+        // About modal event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            const aboutModal = document.getElementById('aboutModal');
+            const aboutCloseBtn = document.querySelector('.about-modal-close');
+            if (aboutCloseBtn) aboutCloseBtn.addEventListener('click', closeAbout);
+            if (aboutModal) aboutModal.addEventListener('click', (e) => {
+                if (e.target === aboutModal) closeAbout();
+            });
+        });
 
         // Blur background on scroll
         window.addEventListener('scroll', () => {
