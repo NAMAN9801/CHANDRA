@@ -1,303 +1,224 @@
-# Project CHANDRA
+# 🌙 Project CHANDRA
+**Critical Hyperspectral Analysis of Naturally Dark Remote Craters**
 
-**Crater and Hazard Analysis for Navigation and Discovery of Resources in Astronomy**
-
-A sophisticated lunar surface analysis tool designed for analyzing Permanently Shadowed Regions (PSR) on the Moon. This project provides image enhancement, terrain analysis, and PSR detection capabilities using advanced computer vision techniques.
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Web Application](#web-application)
-  - [Command Line](#command-line)
-  - [Image Enhancement](#image-enhancement)
-- [Analysis Methods](#analysis-methods)
-- [Output](#output)
-- [Technologies Used](#technologies-used)
-- [License](#license)
+A web-based lunar surface analysis tool for detecting and analyzing Permanently Shadowed Regions (PSRs) on the Moon using advanced image processing techniques.
 
 ---
 
-## Overview
+## 📋 Quick Start
 
-Project CHANDRA is designed to analyze lunar surface imagery, with a focus on:
-- Detecting Permanently Shadowed Regions (PSRs) which are potential sites for water ice deposits
-- Analyzing terrain characteristics including surface roughness
-- Providing multiple PSR detection methods for comprehensive analysis
-- Generating detailed visualizations and statistical reports
+### What Does CHANDRA Do?
+CHANDRA analyzes lunar crater images to:
+- Detect dark shadow regions (PSRs) that might contain water ice
+- Analyze terrain features like peaks and valleys
+- Enhance low-quality images for better visibility
+- Generate detailed reports and visualizations
 
----
-
-## Features
-
-- **Image Enhancement**: CLAHE-based contrast enhancement for low-light lunar imagery
-- **Multi-Method PSR Detection**:
-  - Basic threshold detection
-  - Adaptive threshold detection (Gaussian)
-  - Canny edge detection
-- **Terrain Analysis**:
-  - Peak and valley detection
-  - Surface roughness mapping
-- **Statistical Analysis**: Comprehensive image statistics and PSR coverage metrics
-- **Web Interface**: Interactive 3D frontend with image upload capabilities
-- **Visualization**: Publication-ready analysis plots
-
----
-
-## Project Structure
-
-```
-CHANDRA/
-├── server.py                       # Main Flask web server (deployable)
-├── OptimizedPSRAnalyzer.py         # Core PSR analysis module
-├── working_psr_image_enhancer.py   # Standalone image enhancement tool
-├── app.py                          # Legacy Flask server
-├── requirements.txt                # Python dependencies
-├── README.md                       # Project documentation
-├── static/
-│   └── index.html                  # Modern web interface with sliders
-├── frontend/
-│   ├── index.html                  # Landing page with 3D visualization
-│   └── upload.html                 # Basic image upload interface
-├── assests/
-│   ├── psr_image.png               # Sample PSR image
-│   └── enhanced_psr_image.png      # Enhanced sample image
-├── uploads/                        # Uploaded images (auto-generated)
-├── results/                        # Analysis results (auto-generated)
-└── psr_analysis_<timestamp>/       # CLI analysis output directories
-    ├── analysis_result.png         # Visualization output
-    └── statistics.csv              # Statistical data
-```
-
----
-
-## Installation
-
-### Prerequisites
-
-- Python 3.8 or higher
-- pip package manager
-
-### Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd CHANDRA
-   ```
-
-2. **Create a virtual environment (recommended)**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-   Required packages:
-   - `matplotlib` - Visualization and plotting
-   - `numpy` - Numerical computations
-   - `opencv-python` - Image processing
-   - `pandas` - Data handling and CSV export
-   - `scikit-image` - Advanced image analysis
-   - `scipy` - Scientific computing
-   - `flask` - Web server framework
-   - `flask-cors` - Cross-origin resource sharing
-   - `pillow` - Image file handling
-   - `requests` - HTTP requests
-
----
-
-## Usage
-
-### Web Application (Recommended)
-
-The main web application provides an interactive interface with real-time parameter adjustment using sliders.
-
-1. **Start the server**
-   ```bash
-   python server.py
-   ```
-
-2. **Open in browser**
-   ```
-   http://localhost:5000
-   ```
-
-3. **Using the Interface**
-   - Upload a lunar/PSR image using drag-and-drop or file browser
-   - Adjust analysis parameters using the sliders:
-
-   | Parameter | Range | Description |
-   |-----------|-------|-------------|
-   | CLAHE Clip Limit | 1.0 - 5.0 | Contrast enhancement intensity |
-   | CLAHE Tile Size | 4 - 16 | Grid size for local enhancement |
-   | Basic Threshold | 10 - 200 | Fixed threshold for PSR detection |
-   | Adaptive Block Size | 3 - 31 | Local region size for adaptive threshold |
-   | Adaptive C | 0 - 20 | Constant subtracted from mean |
-   | Canny Sigma | 0.5 - 5.0 | Edge detection smoothing |
-   | Peak Distance | 5 - 50 | Minimum distance between peaks |
-   | Roughness Size | 3 - 15 | Kernel size for roughness calculation |
-
-   - Click **Analyze** to run the analysis
-   - Click **Export** to download results
-   - Click **Reset** to restore default parameters
-
-4. **API Endpoints**
-   - `POST /api/upload` - Upload an image
-   - `POST /api/analyze` - Run analysis with parameters
-   - `POST /api/preview/<type>` - Get single visualization
-   - `POST /api/export` - Export full results
-   - `GET /api/defaults` - Get default parameters
-   - `GET /health` - Health check
-
-### Command Line
-
-Run the analyzer directly on an image:
+### Installation
 
 ```bash
-python OptimizedPSRAnalyzer.py
+# 1. Clone the repository
+git clone https://github.com/NAMAN9801/CHANDRA
+cd CHANDRA
+
+# 2. Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Run the web server
+python server.py
 ```
 
-To analyze a custom image, modify the `image_path` in the `main()` function:
+Then open **http://localhost:5000** in your browser.
 
+---
+
+## ✨ Features
+
+| Feature | What It Does |
+|---------|-------------|
+| **Image Upload** | Upload your own lunar crater images |
+| **Multiple Detection Methods** | Use 3 different algorithms to find dark regions |
+| **Terrain Analysis** | Identify peaks, valleys, and surface roughness |
+| **Auto-Enhancement** | Improve image quality automatically |
+| **Interactive Visualization** | View results with beautiful 3D interface |
+| **Download Results** | Export analysis as high-quality images |
+
+---
+
+## 🔬 How It Works: Image Processing Methods
+
+### 1. **Image Enhancement (CLAHE)**
+Enhances low-contrast lunar images to reveal hidden details.
+- Makes shadows and craters more visible
+- Reduces noise without losing detail
+- Works like turning up the contrast dial smartly
+
+### 2. **PSR Detection (3 Methods)**
+
+**Basic Threshold**
+- Finds dark pixels below a certain brightness level
+- Fast and simple
+- Best for clear, high-contrast images
+
+**Adaptive Threshold**
+- Adjusts threshold based on surrounding pixels
+- Handles varying light conditions
+- More accurate for real-world images
+
+**Edge Detection (Canny)**
+- Finds sharp boundaries of craters and shadows
+- Uses gradient analysis
+- Great for crater rim identification
+
+### 3. **Terrain Analysis**
+- **Peak Detection**: Finds bright spots (elevated terrain)
+- **Valley Detection**: Finds dark spots (depressions)
+- **Surface Roughness**: Measures how textured the surface is using localized variation
+
+### 4. **Statistical Analysis**
+Calculates metrics like:
+- Average brightness and contrast
+- Percentage of image that's shadow (PSR coverage)
+- Range of pixel values
+
+---
+
+## 🎯 How to Use
+
+### Web Interface
+1. Go to http://localhost:5000
+2. Click **"Begin Journey"**
+3. Upload an image or choose from test gallery
+4. Adjust sliders to fine-tune analysis
+5. Click **"Analyze"** to see results
+6. Download or export your results
+
+### Command Line (Advanced)
 ```python
-def main():
-    analyzer = OptimizedPSRAnalyzer()
-    image_path = "path/to/your/image.png"
-    result_path = analyzer.analyze_and_visualize(image_path)
-```
+from server import ConfigurablePSRAnalyzer
+import cv2
 
-Or use in your own script:
+# Load image
+image = cv2.imread('moon_crater.png', cv2.IMREAD_GRAYSCALE)
 
-```python
-from OptimizedPSRAnalyzer import OptimizedPSRAnalyzer
+# Create analyzer with custom parameters
+analyzer = ConfigurablePSRAnalyzer({
+    'clahe_clip_limit': 2.0,
+    'basic_threshold': 50,
+    'edge_sigma': 1.0
+})
 
-analyzer = OptimizedPSRAnalyzer()
-result_path = analyzer.analyze_and_visualize("your_image.png")
-print(f"Results saved to: {result_path}")
-```
-
-### Image Enhancement
-
-For standalone image enhancement:
-
-```bash
-python working_psr_image_enhancer.py
-```
-
-Customize enhancement parameters:
-
-```python
-from working_psr_image_enhancer import enhance_psr_image
-
-enhanced = enhance_psr_image(
-    image_path="input.png",
-    gamma=1.2,              # Gamma correction (default: 1.2)
-    sharpen_strength=0.5    # Sharpening intensity (default: 0.5)
-)
+# Run full analysis
+results = analyzer.full_analysis(image)
 ```
 
 ---
 
-## Analysis Methods
+## 📊 What You Get
 
-### 1. Image Enhancement (CLAHE)
-Contrast Limited Adaptive Histogram Equalization improves visibility in low-contrast lunar imagery while preventing over-amplification of noise.
-
-### 2. PSR Detection Methods
-
-| Method | Description | Best For |
-|--------|-------------|----------|
-| **Basic Threshold** | Fixed threshold (value < 50) | Clear, high-contrast shadows |
-| **Adaptive Threshold** | Gaussian adaptive thresholding | Variable lighting conditions |
-| **Edge Detection** | Canny edge detection (σ=1) | Boundary identification |
-
-### 3. Terrain Analysis
-
-- **Peak Detection**: Identifies local maxima (bright spots/elevated terrain)
-- **Valley Detection**: Identifies local minima (depressions/shadows)
-- **Surface Roughness**: Local standard deviation filter (5x5 kernel) measuring terrain variability
-
-### 4. Statistical Metrics
-
-- **Image Statistics**: Mean, standard deviation, min, max, dynamic range
-- **PSR Coverage**: Percentage of image classified as PSR by each method
+After analysis, you'll see:
+- **Original Image** - Your uploaded crater image
+- **Enhanced Image** - After brightness/contrast improvement
+- **Threshold Detection** - Shadow detection (2 methods)
+- **Surface Map** - Shows roughness and terrain
+- **Edge Detection** - Crater boundaries
+- **Statistics** - Numerical analysis data
 
 ---
 
-## Output
+## 🛠️ Tech Stack
 
-Each analysis run creates a timestamped directory containing:
-
-### analysis_result.png
-A 6-panel visualization showing:
-1. Original Image
-2. Basic Threshold PSR Detection
-3. Adaptive Threshold PSR Detection
-4. Surface Roughness Map
-5. Edge Detection Results
-6. Statistical Summary
-
-### statistics.csv
-Tabular data including:
-- Image statistics (mean, std, min, max, dynamic range)
-- PSR coverage percentages for each detection method
+- **Python** - Core language
+- **OpenCV** - Image processing
+- **Flask** - Web server
+- **Three.js** - 3D visualization
+- **NumPy, SciPy** - Scientific computing
 
 ---
 
-## Technologies Used
+## 📚 Parameters (Adjustable in Web Interface)
 
-| Technology | Purpose |
-|------------|---------|
-| **Python 3** | Core programming language |
-| **OpenCV** | Image processing and thresholding |
-| **NumPy** | Numerical array operations |
-| **SciPy** | Scientific filters (ndimage) |
-| **scikit-image** | Advanced image analysis (Canny, peak detection) |
-| **Matplotlib** | Visualization and plotting |
-| **Pandas** | Data export and CSV handling |
-| **Flask** | Web server and API |
-| **Three.js** | 3D frontend visualization |
+| Parameter | What It Controls | Default |
+|-----------|------------------|---------|
+| CLAHE Clip Limit | Contrast intensity | 2.0 |
+| CLAHE Tile Size | Enhancement region size | 8 |
+| Basic Threshold | Shadow detection level | 50 |
+| Adaptive Block Size | Local comparison window | 11 |
+| Edge Sigma | Edge detection sensitivity | 1.0 |
 
 ---
 
-## Example Output
+## 🎓 Learning Resources
 
-```
-[12:30:45] Loading image from: assests/psr_image.png
-[12:30:45] Enhancing image...
-[12:30:45] Detecting PSR regions...
-[12:30:46] Analyzing terrain...
-[12:30:46] Calculating statistics...
-[12:30:46] Saving results...
-[12:30:46] Creating visualization...
-Analysis complete! Result image saved at: psr_analysis_20260216_123045/analysis_result.png
-```
+New to image processing? Here's what to know:
+- **Threshold**: Separating dark pixels from bright ones
+- **Histogram Equalization**: Spreading out pixel values for better contrast
+- **Edge Detection**: Finding where images change quickly
+- **Peak Detection**: Finding local high points
 
 ---
 
-## Contributing
+## 📖 Inspiration
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
----
-
-## License
-
-This project is open source and available under the MIT License.
+This project was inspired by research on lunar surface analysis and PSR detection methods. Named after **Chandrayaan**, India's successful lunar exploration program, CHANDRA combines multiple image processing techniques to automate crater analysis.
 
 ---
 
-## Acknowledgments
+## 🚀 Features Coming Soon
 
-- Named after Chandrayaan, India's lunar exploration program
-- Designed for lunar PSR analysis and resource detection research
+- [ ] Batch processing for multiple images
+- [ ] Machine learning classification
+- [ ] Real-time parameter adjustments
+- [ ] 3D crater reconstruction
+- [ ] API endpoint documentation
+
+---
+
+## 📝 License
+
+MIT License - Feel free to use for educational and research purposes
+
+---
+
+## 👤 Author
+
+**NAMAN DHINGRA**
+
+Repository: https://github.com/NAMAN9801/CHANDRA
+
+---
+
+## 💡 Tips for Best Results
+
+1. **Use high-resolution images** - Better details = better analysis
+2. **Grayscale images work best** - Convert colored images to grayscale first
+3. **Experiment with sliders** - Different crater types need different settings
+4. **Check multiple methods** - No single method is perfect for all cases
+5. **Look at statistics** - Numbers tell you how much PSR was detected
+
+---
+
+## ❓ Troubleshooting
+
+**"No features detected"**
+- Try increasing the CLAHE clip limit
+- Lower the threshold value
+- Ensure image quality is good
+
+**"Too much noise in results"**
+- Reduce CLAHE clip limit
+- Increase threshold value
+- Use edge detection instead
+
+**"Server won't start"**
+- Check if port 5000 is available
+- Verify all dependencies are installed
+- Try: `pip install -r requirements.txt --upgrade`
+
+---
+
+**Happy crater analyzing! 🌙**
