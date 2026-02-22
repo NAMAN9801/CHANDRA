@@ -258,6 +258,8 @@ def get_test_images():
     
     if os.path.exists(test_assets_folder):
         for filename in sorted(os.listdir(test_assets_folder)):
+            if filename.startswith('psr_image'):
+                continue
             # Skip enhanced_psr_image
             if filename.startswith('enhanced_psr_image'):
                 continue

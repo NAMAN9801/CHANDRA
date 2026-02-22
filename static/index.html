@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +15,7 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             overflow-x: hidden;
             font-family: 'Orbitron', sans-serif;
@@ -21,6 +23,7 @@
             color: white;
             scroll-behavior: smooth;
         }
+
         #scene-container {
             position: fixed;
             top: 0;
@@ -30,12 +33,14 @@
             z-index: -1;
             transition: filter 0.3s;
         }
+
         .content {
             position: relative;
             text-align: center;
             padding: 50px;
             z-index: 1;
         }
+
         .section {
             min-height: 100vh;
             display: flex;
@@ -46,6 +51,7 @@
             perspective: 1px;
             transform-style: preserve-3d;
         }
+
         .section::before {
             content: '';
             position: absolute;
@@ -58,17 +64,20 @@
             z-index: -1;
             opacity: 0.5;
         }
+
         .title {
             font-size: 5em;
             margin-bottom: 0.5em;
-            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
             animation: glow 2s infinite;
         }
+
         .subtitle {
             font-size: 1.5em;
             margin-bottom: 2em;
             opacity: 0.8;
         }
+
         .loading-screen {
             position: fixed;
             top: 0;
@@ -82,12 +91,15 @@
             z-index: 100;
             transition: opacity 1s;
         }
+
         .loading-text {
             color: white;
             font-size: 2em;
             animation: pulse 1s infinite;
         }
-        .explore-btn, .nav-btn {
+
+        .explore-btn,
+        .nav-btn {
             padding: 1em 2em;
             border: 2px solid white;
             background: transparent;
@@ -99,11 +111,15 @@
             position: relative;
             overflow: hidden;
         }
-        .explore-btn:hover, .nav-btn:hover {
+
+        .explore-btn:hover,
+        .nav-btn:hover {
             background: rgba(255, 255, 255, 0.2);
             color: white;
         }
-        .explore-btn::before, .nav-btn::before {
+
+        .explore-btn::before,
+        .nav-btn::before {
             content: '';
             position: absolute;
             top: 0;
@@ -115,20 +131,28 @@
             transform: scaleX(0);
             transform-origin: left;
         }
-        .explore-btn:hover::before, .nav-btn:hover::before {
+
+        .explore-btn:hover::before,
+        .nav-btn:hover::before {
             transform: scaleX(1);
         }
+
         .nav {
             position: fixed;
             top: 20px;
             right: 20px;
             display: flex;
             flex-direction: column;
+            z-index: 10;
         }
-        .about, .features, .contact {
+
+        .about,
+        .features,
+        .contact {
             opacity: 0;
             animation: fadeIn 2s ease-in forwards;
         }
+
         .card-container {
             display: flex;
             justify-content: space-around;
@@ -136,6 +160,7 @@
             width: 100%;
             max-width: 1200px;
         }
+
         .card {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -146,18 +171,22 @@
             width: 300px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
         }
+
         .card:nth-child(even) {
             align-self: flex-end;
         }
+
         .card:hover {
             transform: translateY(-10px);
             background: rgba(255, 255, 255, 0.2);
         }
+
         .gallery {
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
         }
+
         .gallery img {
             width: 200px;
             height: 200px;
@@ -166,9 +195,11 @@
             border-radius: 10px;
             transition: transform 0.3s;
         }
+
         .gallery img:hover {
             transform: scale(1.1);
         }
+
         .modal {
             display: none;
             position: fixed;
@@ -180,15 +211,18 @@
             border-radius: 10px;
             z-index: 100;
         }
+
         .modal.show {
             display: flex;
         }
+
         .modal-content {
             background: white;
             color: black;
             padding: 20px;
             border-radius: 10px;
         }
+
         .close-btn {
             position: absolute;
             top: 10px;
@@ -199,28 +233,54 @@
             font-size: 1.5em;
             cursor: pointer;
         }
+
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
+
         @keyframes glow {
-            0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-            50% { text-shadow: 0 0 20px rgba(255,255,255,1); }
+
+            0%,
+            100% {
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            }
+
+            50% {
+                text-shadow: 0 0 20px rgba(255, 255, 255, 1);
+            }
         }
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
 
         /* --- Adjusted Styles Below --- */
 
-        .section h2 { /* Targeting the section titles (About, Features, Contact Us) */
-            font-size: 3.0em; /* Increased font size - adjust as needed */
-            margin-bottom: 40px; /* Increased margin below titles for spacing - adjust as needed */
+        .section h2 {
+            /* Targeting the section titles (About, Features, Contact Us) */
+            font-size: 3.0em;
+            /* Increased font size - adjust as needed */
+            margin-bottom: 40px;
+            /* Increased margin below titles for spacing - adjust as needed */
         }
 
         .card-container {
-            margin-top: 30px; /* Added margin above card container for spacing from the title - adjust as needed */
+            margin-top: 30px;
+            /* Added margin above card container for spacing from the title - adjust as needed */
         }
 
         /* Modal Styles */
@@ -237,9 +297,11 @@
             z-index: 1000;
             backdrop-filter: blur(5px);
         }
+
         .about-modal.show {
             display: flex;
         }
+
         .about-modal-content {
             background: rgba(0, 0, 0, 0.95);
             border: 2px solid rgba(255, 255, 255, 0.3);
@@ -250,16 +312,19 @@
             overflow-y: auto;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
+
         .about-modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
         }
+
         .about-modal-header h2 {
             font-size: 1.8em;
             margin: 0;
         }
+
         .about-modal-close {
             background: none;
             border: none;
@@ -274,31 +339,36 @@
             justify-content: center;
             transition: all 0.3s;
         }
+
         .about-modal-close:hover {
             color: #b0bec5;
             transform: scale(1.1);
         }
+
         .about-modal-content p {
             margin: 1em 0;
             line-height: 1.6;
             opacity: 0.9;
         }
+
         .about-modal-content h3 {
             margin: 1.5em 0 0.8em 0;
             color: #b0bec5;
             font-size: 1.1em;
         }
+
         .about-modal-content ul {
             margin: 0.8em 0 0.8em 1.5em;
             opacity: 0.9;
             line-height: 1.8;
         }
+
         .about-modal-content li {
             margin: 0.5em 0;
         }
-
     </style>
 </head>
+
 <body>
     <div id="scene-container"></div>
 
@@ -308,7 +378,7 @@
     <div class="loading-screen">
         <div class="loading-text">Loading Universe...</div>
     </div>
-  
+
     <div class="content section" id="home">
         <h1 class="title">CHANDRA</h1>
         <p class="subtitle">Critical Hyperspectral Analysis of Naturally Dark Remote Craters</p>
@@ -340,7 +410,7 @@
                 <p>Conducting groundbreaking research to understand the cosmos better.</p>
             </div>
         </div>
-      
+
     </div>
     <div class="content section contact" id="contact">
         <h2>Contact Us</h2>
@@ -376,8 +446,10 @@
                 <button class="about-modal-close">✕</button>
             </div>
             <p><strong>Critical Hyperspectral Analysis of Naturally Dark Remote Craters</strong></p>
-            <p>Project Chandra is an advanced crater analysis system designed to identify and characterize Permanently Shadowed Regions (PSRs) on the lunar surface. Using sophisticated image processing techniques and hyperspectral analysis, we detect and classify craters with potential scientific interest.</p>
-            
+            <p>Project Chandra is an advanced crater analysis system designed to identify and characterize Permanently
+                Shadowed Regions (PSRs) on the lunar surface. Using sophisticated image processing techniques and
+                hyperspectral analysis, we detect and classify craters with potential scientific interest.</p>
+
             <h3>How to Use</h3>
             <ul>
                 <li>Upload your crater image or select from our test gallery</li>
@@ -386,18 +458,26 @@
                 <li>Download your analysis results as a composite image</li>
                 <li>Export data for further research and scientific study</li>
             </ul>
-            
+
             <h3>Analysis Methods</h3>
             <ul>
-                <li><strong>CLAHE Enhancement</strong> - Contrast Limited Adaptive Histogram Equalization for improved visibility</li>
-                <li><strong>Threshold Detection</strong> - Both binary and adaptive thresholding for crater edge identification</li>
-                <li><strong>Canny Edge Detection</strong> - Advanced edge detection for precise crater boundary mapping</li>
-                <li><strong>Terrain Roughness</strong> - Surface texture analysis using Gaussian filtering and gradient computation</li>
-                <li><strong>Advanced Visualization</strong> - Multi-layer composite images for comprehensive crater analysis</li>
+                <li><strong>CLAHE Enhancement</strong> - Contrast Limited Adaptive Histogram Equalization for improved
+                    visibility</li>
+                <li><strong>Threshold Detection</strong> - Both binary and adaptive thresholding for crater edge
+                    identification</li>
+                <li><strong>Canny Edge Detection</strong> - Advanced edge detection for precise crater boundary mapping
+                </li>
+                <li><strong>Terrain Roughness</strong> - Surface texture analysis using Gaussian filtering and gradient
+                    computation</li>
+                <li><strong>Advanced Visualization</strong> - Multi-layer composite images for comprehensive crater
+                    analysis</li>
             </ul>
-            
-            <p style="margin-top: 2em; padding-top: 1.5em; border-top: 1px solid rgba(255, 255, 255, 0.2);"><strong>GitHub Repository:</strong><br>
-            <a href="https://github.com/NAMAN9801/CHANDRA" target="_blank" style="color: #b0bec5; text-decoration: none; word-break: break-all;">https://github.com/NAMAN9801/CHANDRA</a></p>
+
+            <p style="margin-top: 2em; padding-top: 1.5em; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                <strong>GitHub Repository:</strong><br>
+                <a href="https://github.com/NAMAN9801/CHANDRA" target="_blank"
+                    style="color: #b0bec5; text-decoration: none; word-break: break-all;">https://github.com/NAMAN9801/CHANDRA</a>
+            </p>
         </div>
     </div>
 
@@ -560,4 +640,5 @@
         });
     </script>
 </body>
+
 </html>
