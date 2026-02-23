@@ -31,21 +31,8 @@ os.makedirs(RESULTS_FOLDER, exist_ok=True)
 class ConfigurablePSRAnalyzer:
     """PSR Analyzer with configurable parameters"""
     
-    MAX_DIMENSION = 800  # Cap image size to prevent memory issues on free hosting
-    
     def __init__(self, params=None):
         self.params = params or self.get_default_params()
-    
-    @staticmethod
-    def resize_for_analysis(image, max_dim=None):
-        """Resize image if too large to prevent memory issues"""
-        max_dim = max_dim or ConfigurablePSRAnalyzer.MAX_DIMENSION
-        h, w = image.shape[:2]
-        if max(h, w) > max_dim:
-            scale = max_dim / max(h, w)
-            new_w, new_h = int(w * scale), int(h * scale)
-            return cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
-        return image
     
     @staticmethod
     def get_default_params():
@@ -139,23 +126,15 @@ class ConfigurablePSRAnalyzer:
         return results
     
     def analyze_terrain(self, image):
-        """Terrain analysis with configurable parameters (optimized for low memory)"""
+        """Terrain analysis with configurable parameters"""
         min_dist = int(self.params.get('peak_min_distance', 20))
         roughness_size = int(self.params.get('roughness_size', 5))
         
-        try:
-            peaks = feature.peak_local_max(image, min_distance=min_dist)
-        except Exception:
-            peaks = np.array([])
-        
-        try:
-            valleys = feature.peak_local_max(255 - image, min_distance=min_dist)
-        except Exception:
-            valleys = np.array([])
-        
-        # Use Laplacian-based roughness (much faster and lighter than generic_filter+std)
-        blurred = cv2.GaussianBlur(image.astype(np.float64), (roughness_size | 1, roughness_size | 1), 0)
-        roughness = np.abs(image.astype(np.float64) - blurred)
+        peaks = feature.peak_local_max(image, min_distance=min_dist)
+        valleys = feature.peak_local_max(255 - image, min_distance=min_dist)
+        roughness = ndimage.generic_filter(
+            image.astype(np.float64), np.std, size=roughness_size
+        )
         
         return {
             'peaks': peaks,
@@ -220,9 +199,6 @@ class ConfigurablePSRAnalyzer:
     
     def full_analysis(self, image):
         """Run complete analysis pipeline"""
-        # Resize large images to prevent memory issues on free hosting
-        image = self.resize_for_analysis(image)
-        
         enhanced = self.enhance_image(image)
         psr_results = self.detect_psr(enhanced)
         terrain = self.analyze_terrain(enhanced)
@@ -413,7 +389,6 @@ def preview_single(vis_type):
     
     try:
         analyzer = ConfigurablePSRAnalyzer(params)
-        image = analyzer.resize_for_analysis(image)
         enhanced = analyzer.enhance_image(image)
         psr_results = analyzer.detect_psr(enhanced)
         terrain = analyzer.analyze_terrain(enhanced)
@@ -456,9 +431,6 @@ def export_results():
     
     try:
         analyzer = ConfigurablePSRAnalyzer(params)
-        
-        # Resize for memory safety
-        image = analyzer.resize_for_analysis(image)
         
         # Create comprehensive visualization
         enhanced = analyzer.enhance_image(image)
