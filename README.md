@@ -41,7 +41,7 @@ CHANDRA enhances low-contrast lunar images using CLAHE (Contrast Limited Adaptiv
 
 ## 🌐 Deployment
 
-**Live Demo:** [project-chandra.onrender.com](https://project-chandra.onrender.com)
+**Live Demo:** [http://chandra-gz3q.onrender.com](http://chandra-gz3q.onrender.com/)
 
 > **Note:** On Render's free tier, only lightweight test images (test1, test5) work in the gallery. Larger images (test2–test4) require running the project locally.
 
