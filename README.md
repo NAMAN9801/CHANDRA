@@ -57,7 +57,7 @@ To deploy your own instance, fork the repo, connect it to [Render](https://rende
 | Krrish Sharma |  |
 | Sayam Sharma |  |
 | Divya Sharma |  |
-| Ritvik Sarswat |  |
+| Ritvik Sarswat | [https://github.com/chaRITSzard](https://github.com/chaRITSzard) |
 ---
 
 ## 📝 License
