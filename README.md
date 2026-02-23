@@ -130,6 +130,32 @@ After analysis, you'll see:
 
 ---
 
+## 🌐 Deployment
+
+### Live Demo
+The app is deployed on **Render**: [project-chandra.onrender.com](https://project-chandra.onrender.com)
+
+> **Note:** On Render's free tier, only lightweight test images (test1, test5) are available in the test gallery. The larger test images (test2, test3, test4) require more compute power and are only available when running the project **locally**.
+
+### Deploy Your Own
+1. Fork this repository
+2. Create a free account on [render.com](https://render.com)
+3. Create a **New Web Service** → connect your forked repo
+4. Set the **Start Command** to: `gunicorn server:app --timeout 120 --workers 1`
+5. Choose the **Free** instance type → Deploy
+
+### Test Images
+
+| Image | Size | Available On |
+|-------|------|-------------|
+| test1 | 31 KB | ✅ Local + Render |
+| test2 | 925 KB | ⚡ Local only |
+| test3 | 2 MB | ⚡ Local only |
+| test4 | 737 KB | ⚡ Local only |
+| test5 | 45 KB | ✅ Local + Render |
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Python** - Core language

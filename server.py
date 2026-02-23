@@ -256,12 +256,13 @@ def get_test_images():
     test_assets_folder = 'test_assets'
     images = []
     
+    # Large test images to skip (too heavy for free-tier cloud hosting)
+    SKIP_FILES = {'psr_image', 'enhanced_psr_image', 'test2', 'test3', 'test4'}
+
     if os.path.exists(test_assets_folder):
         for filename in sorted(os.listdir(test_assets_folder)):
-            if filename.startswith('psr_image'):
-                continue
-            # Skip enhanced_psr_image
-            if filename.startswith('enhanced_psr_image'):
+            name_without_ext = filename.split('.')[0]
+            if name_without_ext in SKIP_FILES:
                 continue
             
             filepath = os.path.join(test_assets_folder, filename)
