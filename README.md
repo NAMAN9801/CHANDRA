@@ -45,8 +45,6 @@ CHANDRA enhances low-contrast lunar images using CLAHE (Contrast Limited Adaptiv
 
 > **Note:** On Render's free tier, only lightweight test images (test1, test5) work in the gallery. Larger images (test2–test4) require running the project locally.
 
-To deploy your own instance, fork the repo, connect it to [Render](https://render.com), and set the start command to `gunicorn server:app --timeout 120 --workers 1`.
-
 ---
 
 ##  Contributors
@@ -57,7 +55,7 @@ To deploy your own instance, fork the repo, connect it to [Render](https://rende
 | Krrish Sharma |  |
 | Sayam Sharma |  |
 | Divya Sharma |  |
-| Ritvik Sarswat |  |
+| Ritvik Sarswat | [https://github.com/chaRITSzard](https://github.com/chaRITSzard) |
 ---
 
 ## 📝 License
