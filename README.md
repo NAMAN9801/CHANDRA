@@ -52,7 +52,7 @@ CHANDRA enhances low-contrast lunar images using CLAHE (Contrast Limited Adaptiv
 | Name | GitHub |
 |------|--------|
 | Naman Dhingra | [https://github.com/NAMAN9801](https://github.com/NAMAN9801) |
-| Krrish Sharma |  |
+| Krrish Sharma | [ https://github.com/Discovir ] |
 | Sayam Sharma |  |
 | Divya Sharma |  |
 | Ritvik Sarswat | [https://github.com/chaRITSzard](https://github.com/chaRITSzard) |
